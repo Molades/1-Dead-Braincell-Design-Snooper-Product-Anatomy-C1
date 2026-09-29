@@ -1,0 +1,20 @@
+{
+  "name": "@pixelpeeper/extension",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wxt",
+    "build": "wxt build",
+    "typecheck": "wxt prepare && tsc --noEmit",
+    "postinstall": "wxt prepare"
+  },
+  "dependencies": {
+    "@pixelpeeper/measure": "*",
+    "@pixelpeeper/schema": "*"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.300",
+    "wxt": "^0.20.0"
+  }
+}

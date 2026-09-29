@@ -1,0 +1,17 @@
+{
+  "name": "pixelpeeper",
+  "private": true,
+  "version": "0.0.0",
+  "workspaces": ["packages/*", "apps/*"],
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc -b packages/schema packages/measure && npm run typecheck -w @pixelpeeper/extension",
+    "dev:ext": "npm run dev -w @pixelpeeper/extension",
+    "build:ext": "npm run build -w @pixelpeeper/extension"
+  },
+  "devDependencies": {
+    "jsdom": "^26.0.0",
+    "typescript": "^5.6.0",
+    "vitest": "^3.0.0"
+  }
+}
