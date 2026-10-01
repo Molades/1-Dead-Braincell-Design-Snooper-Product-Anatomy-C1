@@ -1,0 +1,460 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-30T19:17:33.134066+00:00",
+  "title": "Design System: Pixel Peeper",
+  "extensions": {
+    "extensionImplementation": {
+      "status": "scaffold",
+      "ui": [
+        "apps/extension/components/overlay.ts",
+        "apps/extension/components/overlay.css"
+      ],
+      "facts": "@pixelpeeper/measure",
+      "isolation": "Shadow DOM",
+      "activation": "Extension icon opens floating UI without a sidepanel",
+      "persistence": "chrome.storage.local",
+      "features": [
+        "comparison",
+        "borrow",
+        "download"
+      ],
+      "preview": {
+        "path": "docs/scaffold/index.html",
+        "implementation": "Same UI with preview adapters"
+      },
+      "legacy": {
+        "path": "apps/extension/legacy-sidepanel",
+        "manifest": "excluded"
+      },
+      "pending": [
+        "screenshot capture",
+        "AI interpretation",
+        "page aggregates"
+      ],
+      "pageScope": "Body measurements, explicitly labeled",
+      "validation": {
+        "testsPassed": 14,
+        "typecheck": "passed",
+        "build": "passed",
+        "previewInspected": [
+          "desktop",
+          "mobile"
+        ]
+      },
+      "identity": "Existing palette and prototype identity preserved",
+      "readiness": "Implementation scaffold; full production readiness remains unclaimed"
+    },
+    "colorMeta": {
+      "primary": {
+        "role": "primary",
+        "displayName": "Primary",
+        "tonalRamp": [
+          "oklch(15% 0.1561 94.18)",
+          "oklch(27% 0.1561 94.18)",
+          "oklch(39% 0.1561 94.18)",
+          "oklch(51% 0.1561 94.18)",
+          "oklch(63% 0.1561 94.18)",
+          "oklch(75% 0.1561 94.18)",
+          "oklch(87% 0.1561 94.18)",
+          "oklch(95% 0.1561 94.18)"
+        ]
+      },
+      "primary-hover": {
+        "role": "primary",
+        "displayName": "Primary Hover",
+        "tonalRamp": [
+          "oklch(15% 0.1607 92.45)",
+          "oklch(27% 0.1607 92.45)",
+          "oklch(39% 0.1607 92.45)",
+          "oklch(51% 0.1607 92.45)",
+          "oklch(63% 0.1607 92.45)",
+          "oklch(75% 0.1607 92.45)",
+          "oklch(87% 0.1607 92.45)",
+          "oklch(95% 0.1607 92.45)"
+        ]
+      },
+      "primary-soft": {
+        "role": "primary",
+        "displayName": "Primary Soft",
+        "tonalRamp": [
+          "oklch(15% 0.0703 97.01)",
+          "oklch(27% 0.0703 97.01)",
+          "oklch(39% 0.0703 97.01)",
+          "oklch(51% 0.0703 97.01)",
+          "oklch(63% 0.0703 97.01)",
+          "oklch(75% 0.0703 97.01)",
+          "oklch(87% 0.0703 97.01)",
+          "oklch(95% 0.0703 97.01)"
+        ]
+      },
+      "selection": {
+        "role": "secondary",
+        "displayName": "Selection",
+        "tonalRamp": [
+          "oklch(15% 0.2122 266.62)",
+          "oklch(27% 0.2122 266.62)",
+          "oklch(39% 0.2122 266.62)",
+          "oklch(51% 0.2122 266.62)",
+          "oklch(63% 0.2122 266.62)",
+          "oklch(75% 0.2122 266.62)",
+          "oklch(87% 0.2122 266.62)",
+          "oklch(95% 0.2122 266.62)"
+        ]
+      },
+      "measured": {
+        "role": "secondary",
+        "displayName": "Measured",
+        "tonalRamp": [
+          "oklch(15% 0.0716 178.09)",
+          "oklch(27% 0.0716 178.09)",
+          "oklch(39% 0.0716 178.09)",
+          "oklch(51% 0.0716 178.09)",
+          "oklch(63% 0.0716 178.09)",
+          "oklch(75% 0.0716 178.09)",
+          "oklch(87% 0.0716 178.09)",
+          "oklch(95% 0.0716 178.09)"
+        ]
+      },
+      "measured-bg": {
+        "role": "secondary",
+        "displayName": "Measured Bg",
+        "tonalRamp": [
+          "oklch(15% 0.0224 164.51)",
+          "oklch(27% 0.0224 164.51)",
+          "oklch(39% 0.0224 164.51)",
+          "oklch(51% 0.0224 164.51)",
+          "oklch(63% 0.0224 164.51)",
+          "oklch(75% 0.0224 164.51)",
+          "oklch(87% 0.0224 164.51)",
+          "oklch(95% 0.0224 164.51)"
+        ]
+      },
+      "inferred": {
+        "role": "secondary",
+        "displayName": "Inferred",
+        "tonalRamp": [
+          "oklch(15% 0.1075 295.73)",
+          "oklch(27% 0.1075 295.73)",
+          "oklch(39% 0.1075 295.73)",
+          "oklch(51% 0.1075 295.73)",
+          "oklch(63% 0.1075 295.73)",
+          "oklch(75% 0.1075 295.73)",
+          "oklch(87% 0.1075 295.73)",
+          "oklch(95% 0.1075 295.73)"
+        ]
+      },
+      "inferred-bg": {
+        "role": "secondary",
+        "displayName": "Inferred Bg",
+        "tonalRamp": [
+          "oklch(15% 0.0249 301.07)",
+          "oklch(27% 0.0249 301.07)",
+          "oklch(39% 0.0249 301.07)",
+          "oklch(51% 0.0249 301.07)",
+          "oklch(63% 0.0249 301.07)",
+          "oklch(75% 0.0249 301.07)",
+          "oklch(87% 0.0249 301.07)",
+          "oklch(95% 0.0249 301.07)"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "tonalRamp": [
+          "oklch(15% 0.0037 106.65)",
+          "oklch(27% 0.0037 106.65)",
+          "oklch(39% 0.0037 106.65)",
+          "oklch(51% 0.0037 106.65)",
+          "oklch(63% 0.0037 106.65)",
+          "oklch(75% 0.0037 106.65)",
+          "oklch(87% 0.0037 106.65)",
+          "oklch(95% 0.0037 106.65)"
+        ]
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Muted",
+        "tonalRamp": [
+          "oklch(15% 0.0078 106.68)",
+          "oklch(27% 0.0078 106.68)",
+          "oklch(39% 0.0078 106.68)",
+          "oklch(51% 0.0078 106.68)",
+          "oklch(63% 0.0078 106.68)",
+          "oklch(75% 0.0078 106.68)",
+          "oklch(87% 0.0078 106.68)",
+          "oklch(95% 0.0078 106.68)"
+        ]
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "Line",
+        "tonalRamp": [
+          "oklch(15% 0.0121 106.64)",
+          "oklch(27% 0.0121 106.64)",
+          "oklch(39% 0.0121 106.64)",
+          "oklch(51% 0.0121 106.64)",
+          "oklch(63% 0.0121 106.64)",
+          "oklch(75% 0.0121 106.64)",
+          "oklch(87% 0.0121 106.64)",
+          "oklch(95% 0.0121 106.64)"
+        ]
+      },
+      "paper": {
+        "role": "neutral",
+        "displayName": "Paper",
+        "tonalRamp": [
+          "oklch(15% 0.0067 97.35)",
+          "oklch(27% 0.0067 97.35)",
+          "oklch(39% 0.0067 97.35)",
+          "oklch(51% 0.0067 97.35)",
+          "oklch(63% 0.0067 97.35)",
+          "oklch(75% 0.0067 97.35)",
+          "oklch(87% 0.0067 97.35)",
+          "oklch(95% 0.0067 97.35)"
+        ]
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "Surface",
+        "tonalRamp": [
+          "oklch(15% 0.0054 95.10)",
+          "oklch(27% 0.0054 95.10)",
+          "oklch(39% 0.0054 95.10)",
+          "oklch(51% 0.0054 95.10)",
+          "oklch(63% 0.0054 95.10)",
+          "oklch(75% 0.0054 95.10)",
+          "oklch(87% 0.0054 95.10)",
+          "oklch(95% 0.0054 95.10)"
+        ]
+      },
+      "canvas": {
+        "role": "neutral",
+        "displayName": "Canvas",
+        "tonalRamp": [
+          "oklch(15% 0.0094 99.99)",
+          "oklch(27% 0.0094 99.99)",
+          "oklch(39% 0.0094 99.99)",
+          "oklch(51% 0.0094 99.99)",
+          "oklch(63% 0.0094 99.99)",
+          "oklch(75% 0.0094 99.99)",
+          "oklch(87% 0.0094 99.99)",
+          "oklch(95% 0.0094 99.99)"
+        ]
+      },
+      "hover": {
+        "role": "neutral",
+        "displayName": "Hover",
+        "tonalRamp": [
+          "oklch(15% 0.0133 102.02)",
+          "oklch(27% 0.0133 102.02)",
+          "oklch(39% 0.0133 102.02)",
+          "oklch(51% 0.0133 102.02)",
+          "oklch(63% 0.0133 102.02)",
+          "oklch(75% 0.0133 102.02)",
+          "oklch(87% 0.0133 102.02)",
+          "oklch(95% 0.0133 102.02)"
+        ]
+      },
+      "evidence": {
+        "role": "secondary",
+        "displayName": "Evidence",
+        "tonalRamp": [
+          "oklch(15% 0.0543 161.09)",
+          "oklch(27% 0.0543 161.09)",
+          "oklch(39% 0.0543 161.09)",
+          "oklch(51% 0.0543 161.09)",
+          "oklch(63% 0.0543 161.09)",
+          "oklch(75% 0.0543 161.09)",
+          "oklch(87% 0.0543 161.09)",
+          "oklch(95% 0.0543 161.09)"
+        ]
+      },
+      "evidence-bg": {
+        "role": "secondary",
+        "displayName": "Evidence Bg",
+        "tonalRamp": [
+          "oklch(15% 0.0109 149.86)",
+          "oklch(27% 0.0109 149.86)",
+          "oklch(39% 0.0109 149.86)",
+          "oklch(51% 0.0109 149.86)",
+          "oklch(63% 0.0109 149.86)",
+          "oklch(75% 0.0109 149.86)",
+          "oklch(87% 0.0109 149.86)",
+          "oklch(95% 0.0109 149.86)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "headline": {
+        "displayName": "Editorial Heading",
+        "purpose": "Welcome heading; serif tone for lesson headings."
+      },
+      "evidence": {
+        "displayName": "Evidence Key",
+        "purpose": "Compact wrapping source keys."
+      }
+    },
+    "shadows": [
+      {
+        "name": "window",
+        "value": "0 14px 48px #24242026",
+        "purpose": "Lift the movable workspace."
+      },
+      {
+        "name": "dock",
+        "value": "0 8px 32px #24242026",
+        "purpose": "Lift bottom controls."
+      },
+      {
+        "name": "toolbar",
+        "value": "0 8px 22px #24242020",
+        "purpose": "Lift selection controls."
+      }
+    ],
+    "motion": [
+      {
+        "name": "button-transition",
+        "value": "background .15s, transform .15s",
+        "purpose": "Button response; removed in reduced-motion mode."
+      },
+      {
+        "name": "mascot-lift",
+        "value": "220ms cubic-bezier(.16,1,.3,1)",
+        "purpose": "Lift peeking pose on hover, focus, or menu opening."
+      },
+      {
+        "name": "menu-reveal",
+        "value": "opacity 120ms, transform 220ms cubic-bezier(.16,1,.3,1)",
+        "purpose": "Reveal corner controls."
+      },
+      {
+        "name": "menu-pointerleave",
+        "value": "300ms",
+        "purpose": "Collapse after pointer departure unless keyboard focus remains within launcher."
+      },
+      {
+        "name": "scan-beam",
+        "value": "1100ms ease-in-out infinite alternate",
+        "purpose": "Up/down beam bounded to scanned subject during analysis."
+      },
+      {
+        "name": "scan-pixels",
+        "value": "1600ms ease-in-out infinite alternate",
+        "purpose": "Small marks pulse within scan bounds; staggered by 300ms and 600ms."
+      },
+      {
+        "name": "save-getaway",
+        "value": "500ms cubic-bezier(.16,1,.3,1)",
+        "purpose": "Settle getaway pose after a new save."
+      },
+      {
+        "name": "save-feedback",
+        "value": "2800ms",
+        "purpose": "Show credited-save status for new items only."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "compact-desktop",
+        "value": "850px"
+      },
+      {
+        "name": "small-prototype",
+        "value": "560px"
+      }
+    ],
+    "mascot": {
+      "asset": "docs/prototype/assets/detective-poses.png",
+      "backgroundSize": "500% 400%",
+      "peekPosition": "25% 0%",
+      "getawayPosition": "100% 66.6667%",
+      "buttonSize": "116px \u00d7 84px",
+      "spriteSize": "116px \u00d7 78px",
+      "compactButtonSize": "88px \u00d7 66px",
+      "compactSpriteSize": "88px \u00d7 59px",
+      "compactBreakpoint": "680px",
+      "cornerInset": "20px right, 12px bottom",
+      "compactCornerInset": "8px right, 12px bottom",
+      "scanRadius": "4px",
+      "behavior": "Activate to reveal Pick element, Pick whole page, Saved, and Resume. Keyboard activation focuses Pick element; keyboard focus keeps the menu open. Scan selection shows bounded beam, pixel marks, and status until simulated analysis completes. New saves celebrate; duplicate saves do not replay.",
+      "saveStatus": "Idea stolen. Source credited. Saved!",
+      "reducedMotion": "Static centered scan line and pixel marks; status remains visible. Mascot, menu, save, and spinner motion is disabled."
+    }
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Compact action with a warm hover response.",
+      "html": "<button class=\"ds-primary\">Pick element</button>",
+      "css": ".ds-primary{font:500 12px/1.5 -apple-system,BlinkMacSystemFont,\"Inter\",system-ui,sans-serif;background:var(--acc);color:var(--ink);border:1px solid transparent;border-radius:9px;padding:10px 12px;cursor:pointer;transition:background .15s,transform .15s}.ds-primary:hover{background:#efc62e}.ds-primary:focus-visible{outline:3px solid #345be4;outline-offset:3px}.ds-primary:disabled{opacity:.5;cursor:not-allowed} @media(prefers-reduced-motion:reduce){.ds-primary{transition:none}}"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Compact action with a warm hover response.",
+      "html": "<button class=\"ds-secondary\">Pick element</button>",
+      "css": ".ds-secondary{font:500 12px/1.5 -apple-system,BlinkMacSystemFont,\"Inter\",system-ui,sans-serif;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:9px;padding:10px 12px;cursor:pointer;transition:background .15s,transform .15s}.ds-secondary:hover{background:#efeee4}.ds-secondary:focus-visible{outline:3px solid #345be4;outline-offset:3px}.ds-secondary:disabled{opacity:.5;cursor:not-allowed} @media(prefers-reduced-motion:reduce){.ds-secondary{transition:none}}"
+    },
+    {
+      "name": "Measured Label",
+      "kind": "chip",
+      "refersTo": "measured-label",
+      "description": "Visible provenance paired with semantic color.",
+      "html": "<span class=\"ds-measured\">Measured</span>",
+      "css": ".ds-measured{font:500 10px/1.5 system-ui;background:var(--meas-bg);color:var(--meas);border-radius:99px;padding:3px 8px}"
+    },
+    {
+      "name": "Inferred Label",
+      "kind": "chip",
+      "refersTo": "inferred-label",
+      "description": "Visible provenance paired with semantic color.",
+      "html": "<span class=\"ds-inferred\">Inferred</span>",
+      "css": ".ds-inferred{font:500 10px/1.5 system-ui;background:var(--inf-bg);color:var(--inf);border-radius:99px;padding:3px 8px}"
+    },
+    {
+      "name": "Lesson Group",
+      "kind": "card",
+      "description": "Flat grouping with a quiet separator.",
+      "html": "<section class=\"ds-group\"><h4>Typography</h4><p>Family and size from the selected element.</p></section>",
+      "css": ".ds-group{font:13px/1.6 system-ui;color:var(--ink);padding:0 0 18px;margin:0 0 18px;border-bottom:1px solid var(--line)}.ds-group h4{font:500 11px/1.5 system-ui;margin:0 0 8px}.ds-group p{margin:4px 0 6px}"
+    },
+    {
+      "name": "Tabs",
+      "kind": "nav",
+      "description": "Ink underline on a neutral separator.",
+      "html": "<nav class=\"ds-tabs\"><button class=\"ds-on\">Lesson</button><button>Measurements</button></nav>",
+      "css": ".ds-tabs{display:flex;gap:20px;border-bottom:1px solid var(--line)}.ds-tabs button{font:500 12px/1.5 system-ui;border:0;border-bottom:2px solid transparent;padding:8px 0 10px;background:transparent;color:var(--mute);cursor:pointer}.ds-tabs .ds-on{color:var(--ink);border-bottom-color:var(--ink)}.ds-tabs button:hover{background:#efeee5}.ds-tabs button:focus-visible{outline:3px solid #345be4;outline-offset:3px}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Floating Study Desk",
+    "overview": "Warm paper, dark ink, and small deliberate accents make a calm place to study the website underneath. Minimal Granola reference imagery informs the restraint; Pixel Peeper uses its own yellow actions and explicit evidence labels. Serif welcome and lesson headings bring an editorial quality, while sans-serif controls keep operation clear.\n\nThis records the finished concept at `docs/prototype/index.html`, especially its final CSS override block. It is guidance for new concept screens, not a claim that the existing extension sidepanel has migrated. The Northwind demo website has its own styling and is not the extension's design system. Product behavior and proposed future capabilities belong in `PRODUCT.md` and `docs/design/flow.md`.",
+    "keyCharacteristics": [
+      "Warm paper surfaces and quiet neutral separators.",
+      "Yellow actions, blue selection, teal facts, lavender interpretation.",
+      "Floating surfaces over an unchanged website viewport.",
+      "User-supplied detective artwork in the corner launcher, save feedback, welcome, and brand placements."
+    ],
+    "rules": [
+      {
+        "name": "The Evidence Label Rule",
+        "body": "Pair semantic color with visible Measured or Inferred text; color alone must not carry provenance.",
+        "section": "colors"
+      }
+    ],
+    "dos": [
+      "Do use warm paper and ink as the dominant reading environment.",
+      "Do preserve visible evidence labels and compact, wrapping source keys.",
+      "Do keep content groups flat and lift the floating UI with structural shadows.",
+      "Do preserve the supplied detective illustrations in launcher, save feedback, welcome, and brand placements."
+    ],
+    "donts": [
+      "Don't use the demo website's marketing styles as extension tokens.",
+      "Don't fill measurements or lesson results with decorative artwork.",
+      "Don't imply that this concept has already replaced the production sidepanel."
+    ]
+  }
+}

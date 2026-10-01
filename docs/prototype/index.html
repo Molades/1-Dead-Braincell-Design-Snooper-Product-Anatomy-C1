@@ -42,8 +42,8 @@ button{font:inherit;cursor:pointer}
 .plans{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;padding:32px 48px 64px;font-family:system-ui}
 .plan{border:1px solid #e7e5e4;border-radius:16px;padding:28px}
 .plan.hot{border:2px solid #1c1917;box-shadow:0 12px 32px #0001}
-.plan h3{margin:0 0 4px;font-size:18px}.plan .price{font-size:40px;font-weight:700;margin:12px 0}
-.plan .price small{font-size:14px;font-weight:400;color:#78716c}
+.plan h2{margin:0 0 4px;font-size:18px}.plan .price{font-size:40px;font-weight:700;margin:12px 0}
+.plan .price small{font-size:14px;font-weight:400;color:#625d57}
 .plan ul{padding:0;list-style:none;color:#57534e;font-size:14px;line-height:2.1;margin:0 0 20px}
 .plan button{width:100%;padding:11px;border-radius:8px;border:1px solid #d6d3d1;background:#fff;font-weight:600;font-size:14px}
 .plan.hot button{background:#1c1917;color:#fff;border:0}
@@ -93,10 +93,49 @@ th{font-size:11px;color:var(--mute);font-weight:600}td.diff{background:#fef9c3}
 pre{background:#16151a;color:#e5e3ee;border-radius:10px;padding:12px;font:12px/1.5 ui-monospace,monospace;overflow:auto;margin:0;white-space:pre-wrap}
 .seg{display:flex;background:#e9e7ef;border-radius:8px;padding:2px;margin-bottom:10px}.seg button{flex:1;border:0;background:none;border-radius:6px;padding:5px;font-size:12px}.seg button.on{background:#fff;font-weight:600}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:8px 16px;border-radius:99px;font-size:13px;opacity:0;transition:.2s;pointer-events:none}.toast.show{opacity:1}
+
+/* Floating study surface — warm paper, vivid accents */
+:root{--ink:#252523;--mute:#62625d;--line:#deded5;--bg:#f8f7f2;--card:#fffefa;--acc:#f9d54a;--acc-soft:#fff3bd;--meas:#216659;--meas-bg:#e0f2e9;--inf:#665296;--inf-bg:#eee8fa}
+body{height:100vh;background:#efeee7}button{transition:background .15s,transform .15s}button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid #345be4;outline-offset:3px}::selection{background:#ffe687;color:#252523}
+.flow{padding:12px 24px;background:#f8f7f2;color:var(--ink);border-bottom:1px solid var(--line);gap:5px}.flow b{opacity:1;color:var(--mute)}.flow button{background:transparent;color:var(--mute);padding:6px 12px}.flow button.on{background:var(--acc);color:var(--ink)}.flow button:hover{background:#ecebe3}
+.stage{position:relative;padding:16px 20px 20px}.browser{margin:0;border-radius:12px;box-shadow:0 8px 30px #2424200c}.bar{background:#f4f3ed;padding:12px 18px}.url{border-radius:6px;color:#66665e;background:#eae9e1;padding:5px 16px;text-align:center}.dots i:nth-child(1){background:#ed8175}.dots i:nth-child(2){background:#efc965}.dots i:nth-child(3){background:#88b99a}
+.site nav{padding:26px 6%;border:0}.site nav strong{font-family:Georgia,serif;font-weight:400;font-size:26px!important}.site nav a{font-size:13px}.hero{padding:64px 20px 42px;background:#fff}.hero h1{font-weight:400;font-size:clamp(36px,4vw,60px);max-width:650px;margin:0 auto 20px;letter-spacing:-.035em}.hero p{font-size:16px;max-width:440px}.cta,.ghost{border-radius:99px;padding:15px 26px;font-size:14px}.plans{max-width:1120px;margin:auto;gap:22px;padding:32px 6% 140px}.plan{border-radius:12px;padding:26px}.plan.hot{background:#f3f4ec;border:1px solid #b6bca2;box-shadow:none}.plan .price{font-weight:400}.plan h2{font-weight:500}.plan.hot button{background:#363d29}.badge-s{background:#dbe8ba;color:#374624}
+.panel{position:absolute;right:42px;bottom:110px;width:390px;max-height:calc(100% - 140px);margin:0;background:var(--bg);border-radius:16px;box-shadow:0 14px 48px #24242026;z-index:10}.phead{background:var(--bg);padding:16px 20px 0;border:0}.brand{margin-bottom:16px;font-weight:500}.brand .brand-name{display:flex;align-items:center;gap:9px}.brand img{width:30px;height:30px;border-radius:8px}.brand span{color:var(--mute)}.window-tools{display:flex;gap:4px}.window-tools button{border:0;background:transparent;padding:5px;color:var(--mute);font-size:12px}.tabs{gap:20px;border-bottom:1px solid var(--line)}.tabs button{padding:8px 0 10px;font-size:12px}.tabs button.on{color:var(--ink);border-color:var(--ink)}.tabs .n{background:var(--acc);color:var(--ink)}
+.pbody{padding:20px;scrollbar-width:thin;scrollbar-color:#bcbdb2 transparent}.pfoot{padding:12px 20px 16px;background:var(--bg);flex-wrap:wrap}.btn{border-radius:9px;font-size:12px;padding:10px 12px;background:var(--card)}.btn.p{background:var(--acc);color:var(--ink);border-color:transparent}.btn:hover{background:#efeee4}.btn.p:hover{background:#efc62e}.btn:disabled{opacity:.5}.card{background:transparent;border:0;border-radius:0;padding:0 0 18px;margin:0 0 18px;border-bottom:1px solid var(--line)}.card:last-child{margin-bottom:0}.card h4{font-size:11px;letter-spacing:.02em;text-transform:none;font-weight:500;color:var(--ink);gap:8px}.lb{font-size:10px;text-transform:none;letter-spacing:0;font-weight:500;padding:3px 8px}.claim p{font-size:13px;line-height:1.6}.chip{background:#eaf1eb;color:#315744;font-size:10px;padding:3px 6px;overflow-wrap:anywhere}.chip.v{background:var(--inf-bg);color:var(--inf)}.kv{grid-template-columns:100px 1fr;font-size:12px;row-gap:8px}.center{padding:14px 0 20px}.center h3{font:400 29px/1.12 Georgia,serif!important;letter-spacing:-.025em}.center p{line-height:1.6}.big{display:none}.welcome-art{width:100px;height:100px;object-fit:cover;border-radius:24px;margin:0 auto 20px;display:block}.disc{background:#efeee5;font-size:12px;border-radius:8px;padding:12px}.thumb{background:#fff;border-radius:8px}.tray{background:#252523;border-radius:10px}.tray .btn{border:0}pre{font-size:11px;background:#eeede6;color:#34342e;border-radius:8px;max-height:200px}.seg{background:#eae9e1}.borrow label{border-radius:7px}.borrow input{display:inline;accent-color:#665296}.borrow input:checked+span{color:#665296}
+.hbox,.sbox{border-color:#345be4;background:#345be408;box-shadow:none}.tag{background:#345be4;font-size:11px;font-family:system-ui;font-weight:500}.float{background:var(--card);color:var(--ink);box-shadow:0 8px 22px #24242020;border-radius:10px}.float button{color:var(--ink)}.float .go{background:var(--acc)}.float button:hover{background:#efeee5}.pick-hint{top:18px;background:#252523;padding:10px 18px}.picking .panel{display:none}
+.dock{position:absolute;bottom:36px;left:50%;transform:translateX(-50%);z-index:15;display:flex;gap:6px;align-items:center;background:var(--card);border-radius:14px;box-shadow:0 8px 32px #24242026;padding:8px}.dock img{width:34px;height:34px;border-radius:9px;margin:0 6px}.dock button{background:transparent;border:0;border-radius:8px;padding:10px 12px;color:var(--ink);font-size:12px;white-space:nowrap}.dock button.primary{background:var(--acc)}.dock button:hover{background:#efeee5}.dock .primary:hover{background:#efc62e}.dock .divider{height:22px;width:1px;background:var(--line)}.prototype-note{position:absolute;left:40px;bottom:42px;font-size:11px;color:var(--mute);max-width:160px;z-index:2}.panel.expanded{width:min(780px,calc(100% - 84px))}.panel.expanded table{font-size:13px}.panel.minimized{display:none}.drag-handle{cursor:move;touch-action:none}.page-mode .sbox{display:none}
+@media(max-width:850px){.prototype-note{display:none}.panel{right:32px;width:350px}.panel.expanded{width:calc(100% - 64px)}.site nav a{margin-left:12px}.hero{padding-top:42px}.plans{padding-left:24px;padding-right:24px;gap:14px}.plan{padding:18px}}
+@media(max-width:560px){.stage{padding:8px}.flow{padding:8px;gap:2px}.flow b{width:100%;font-size:11px}.flow button{padding:5px 7px;font-size:11px}.panel,.panel.expanded{right:16px;left:16px;width:auto;bottom:88px;max-height:calc(100% - 110px)}.dock{bottom:22px;width:calc(100% - 32px);justify-content:center;gap:2px;padding:6px}.dock button{padding:10px 7px;font-size:11px}.dock img{width:26px;height:26px;margin:0 3px}.site nav{padding:20px}.site nav a:nth-child(-n+2){display:none}.hero h1{font-size:36px}.plans{grid-template-columns:1fr}.pbody{padding:16px}.phead{padding:14px 16px 0}.pfoot{padding:12px 16px}.hero{padding-top:24px}.ghost{margin:12px 0 0}.float{max-width:calc(100% - 16px);flex-wrap:wrap}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+
+
+/* Mascot launcher: controls appear on intent; scan is bounded to its subject. */
+.peeper-launcher{position:absolute;right:20px;bottom:12px;z-index:20;display:flex;align-items:flex-end;gap:10px;max-width:calc(100% - 32px)}
+.mascot-button{position:relative;flex:none;width:116px;height:84px;padding:0;border:0;background:transparent;cursor:pointer;overflow:hidden;border-radius:8px;touch-action:manipulation}
+.mascot-sprite{display:block;width:116px;height:78px;background-image:url('assets/detective-poses.png');background-size:500% 400%;background-position:25% 0%;mix-blend-mode:darken;transform:translateY(-10px);transition:transform 220ms cubic-bezier(.16,1,.3,1)}
+.mascot-button:hover .mascot-sprite,.mascot-button:focus-visible .mascot-sprite,.peeper-launcher.open .mascot-sprite{transform:translateY(-14px)}
+.mascot-button::after{content:'';position:absolute;bottom:0;left:8px;right:8px;height:3px;border-radius:2px;background:var(--ink)}
+.peeper-launcher .dock{position:static;transform:translateX(16px);bottom:auto;left:auto;display:flex;opacity:0;visibility:hidden;pointer-events:none;transition:opacity 120ms,transform 220ms cubic-bezier(.16,1,.3,1),visibility 120ms;padding:8px;margin-bottom:8px;gap:4px}
+.peeper-launcher.open .dock{opacity:1;visibility:visible;pointer-events:auto;transform:translateX(0)}
+.peeper-launcher .dock button{padding:10px 12px}.peeper-launcher .dock img{display:none}
+.mascot-status{position:absolute;right:12px;bottom:96px;background:var(--ink);color:var(--card);border-radius:10px;padding:10px 14px;font-size:12px;white-space:nowrap;box-shadow:0 5px 18px #24242018;opacity:0;transform:translateY(6px);pointer-events:none;transition:opacity 150ms,transform 200ms}
+.peeper-launcher.collected .mascot-status{opacity:1;transform:translateY(0)}
+.peeper-launcher.collected .mascot-sprite{background-position:100% 66.6667%;transform:translateY(0);animation:idea-pocket 500ms cubic-bezier(.16,1,.3,1)}
+@keyframes idea-pocket{0%{transform:translateX(12px) rotate(7deg)}100%{transform:translateX(0) rotate(0)}}
+.scan-overlay{display:none;position:absolute;z-index:7;pointer-events:none;border:2px solid var(--selection);border-radius:4px;overflow:hidden;background:#345be40c;--travel:100px}
+.scan-overlay.active{display:block}.scan-beam{position:absolute;top:0;left:0;right:0;height:2px;background:var(--selection);box-shadow:0 -10px 24px 5px #345be429;animation:peeper-scan 1100ms ease-in-out infinite alternate}
+.scan-pixels{position:absolute;inset:0}.scan-pixels i{position:absolute;width:5px;height:5px;background:var(--selection);opacity:.25;animation:pixel-read 1600ms ease-in-out infinite alternate}
+.scan-pixels i:nth-child(2n){width:3px;height:3px;background:#665296;animation-delay:300ms}.scan-pixels i:nth-child(3n){animation-delay:600ms}
+@keyframes peeper-scan{from{transform:translateY(0)}to{transform:translateY(var(--travel))}}
+@keyframes pixel-read{from{opacity:.15}to{opacity:.6}}
+.scan-status{position:absolute;display:none;z-index:8;background:var(--ink);color:var(--card);border-radius:9px;padding:8px 12px;font-size:12px;pointer-events:none;box-shadow:0 5px 18px #24242020;max-width:calc(100% - 16px)}.scan-status.active{display:block}
+@media(max-width:680px){.peeper-launcher{right:8px;bottom:12px;gap:0}.mascot-button{width:88px;height:66px}.mascot-sprite{width:88px;height:59px}.peeper-launcher .dock{position:absolute;right:0;bottom:74px;margin:0;width:max-content;max-width:calc(100vw - 32px);flex-wrap:wrap;justify-content:flex-start}.peeper-launcher .dock button{font-size:11px;padding:10px 9px}.mascot-status{right:0;bottom:160px}.panel{bottom:96px}}
+@media(prefers-reduced-motion:reduce){.steps li.now .dot{animation:none}.scan-beam{animation:none;top:50%;box-shadow:none}.scan-pixels i{animation:none;opacity:.3}.peeper-launcher.collected .mascot-sprite{animation:none}.mascot-sprite,.peeper-launcher .dock,.mascot-status{transition:none}}
+
 </style>
 </head>
 <body>
-<div class="flow" id="flow"><b>Prototype flow:</b></div>
+<div class="flow" id="flow"><b>Explore the flow</b></div>
 <div class="stage">
   <div class="browser" id="browser">
     <div class="bar"><div class="dots"><i></i><i></i><i></i></div><div class="url">northwind.example/pricing</div></div>
@@ -104,30 +143,34 @@ pre{background:#16151a;color:#e5e3ee;border-radius:10px;padding:12px;font:12px/1
       <div class="pick-hint">Click any element · ↑ ↓ walk parent/child · Esc to cancel</div>
       <div class="hbox" id="hbox"><span class="tag"></span></div>
       <div class="sbox" id="sbox"><span class="tag"></span></div>
-      <div class="float" id="float"><button class="go" id="fAnalyze">✦ Analyze</button><button id="fUp">↑ Parent</button><button id="fDown">↓ Child</button></div>
+      <div class="scan-overlay" id="scanOverlay" aria-hidden="true"><div class="scan-pixels"><i style="left:8%;top:12%"></i><i style="left:25%;top:35%"></i><i style="left:42%;top:58%"></i><i style="left:59%;top:81%"></i><i style="left:76%;top:28%"></i><i style="left:9%;top:51%"></i><i style="left:26%;top:74%"></i><i style="left:43%;top:21%"></i><i style="left:60%;top:44%"></i><i style="left:77%;top:67%"></i><i style="left:10%;top:14%"></i><i style="left:27%;top:37%"></i></div><div class="scan-beam"></div></div>
+      <div class="scan-status" id="scanStatus" role="status" aria-live="polite"></div>
+      <div class="float" id="float"><button class="go" id="fAnalyze">Scan selection</button><button id="fUp">↑ Parent</button><button id="fDown">↓ Child</button></div>
       <div class="site" id="site">
         <nav><strong style="font-size:20px">Northwind</strong><div><a>Product</a><a>Pricing</a><a>Docs</a><a style="color:#1c1917;font-weight:600">Sign in</a></div></nav>
         <section class="hero"><h1>Ship invoices that get paid on time</h1><p>Northwind automates billing, reminders and reconciliation so your team can focus on growth.</p><button class="cta">Start free trial</button><button class="ghost">Book a demo</button></section>
         <section class="plans">
-          <div class="plan"><h3>Starter</h3><div class="price">$19<small>/mo</small></div><ul><li>5 invoices</li><li>Email support</li></ul><button>Choose Starter</button></div>
-          <div class="plan hot"><span class="badge-s">Most popular</span><h3 style="margin-top:8px">Growth</h3><div class="price">$49<small>/mo</small></div><ul><li>Unlimited invoices</li><li>Automated reminders</li></ul><button>Choose Growth</button></div>
-          <div class="plan"><h3>Scale</h3><div class="price">$129<small>/mo</small></div><ul><li>Team roles</li><li>Priority support</li></ul><button>Choose Scale</button></div>
+          <div class="plan"><h2>Starter</h2><div class="price">$19<small>/mo</small></div><ul><li>5 invoices</li><li>Email support</li></ul><button>Choose Starter</button></div>
+          <div class="plan hot"><span class="badge-s">Most popular</span><h2 style="margin-top:8px">Growth</h2><div class="price">$49<small>/mo</small></div><ul><li>Unlimited invoices</li><li>Automated reminders</li></ul><button>Choose Growth</button></div>
+          <div class="plan"><h2>Scale</h2><div class="price">$129<small>/mo</small></div><ul><li>Team roles</li><li>Priority support</li></ul><button>Choose Scale</button></div>
         </section>
       </div>
     </div>
   </div>
-  <aside class="panel">
-    <div class="phead"><div class="brand"><div>◎ Pixel Peeper</div><span id="keystat">API key ✓ Anthropic</span></div>
+  <aside class="panel" id="lessonWindow" aria-label="Pixel Peeper floating workspace">
+    <div class="phead"><div class="brand"><div class="brand-name drag-handle" id="dragHandle"><img src="assets/detective.png" alt="">Pixel Peeper</div><div class="window-tools"><button id="minimize" aria-label="Minimize window">Hide</button><button id="closeWindow" aria-label="Close workspace">Close</button></div></div>
       <div class="tabs" id="tabs"><button data-t="inspect" class="on">Inspect</button><button data-t="library">Library <span class="n" id="libn">0</span></button><button data-t="compare">Compare</button></div></div>
     <div class="pbody" id="pbody"></div>
     <div class="pfoot" id="pfoot"></div>
   </aside>
+  <div class="prototype-note">Interactive concept<br>Local measurements · simulated AI</div>
+  <div class="peeper-launcher" id="peeperLauncher"><nav class="dock" id="mascotMenu" aria-label="Pixel Peeper controls"><button class="primary" id="dockPick">Pick element</button><button id="dockPage">Pick whole page</button><span class="divider"></span><button id="dockLibrary">Saved</button><button id="dockResume">Resume</button></nav><button class="mascot-button" id="mascotButton" aria-label="Open Pixel Peeper controls" aria-expanded="false" aria-controls="mascotMenu"><span class="mascot-sprite" aria-hidden="true"></span></button><div class="mascot-status" id="mascotStatus" role="status" aria-live="polite"></div></div>
 </div>
-<div class="toast" id="toast"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
 const $=s=>document.querySelector(s), page=$('#page'), site=$('#site');
-const S={tab:'inspect',phase:'idle',hover:null,sel:null,facts:null,analysis:null,lib:[],cmp:[],pickFor:{},xtab:'md',keyOk:true};
+const S={tab:'inspect',phase:'idle',hover:null,sel:null,facts:null,analysis:null,lib:[],cmp:[],pickFor:{},xtab:'md',keyOk:true,resultTab:'lesson',runVersion:0,userHid:false};
 
 /* ---------- Measure (real values from the mock DOM) ---------- */
 const px=v=>parseFloat(v)||0;
@@ -157,17 +200,18 @@ function label(el){const t=el.tagName.toLowerCase();const x=(el.textContent||'')
 
 /* ---------- Mock model output (canned; the real one is AI) ---------- */
 function analyze(f){
+  if(f.pageSummary)return analyzePage(f);
   const t=f.tag,fs=f['typography.fontSize'],h=f['size.height'],ev=(...a)=>a;
   const cta=t==='button'&&f['color.background']!=='rgb(255, 255, 255)';
   const role=cta?'Primary call-to-action':t==='button'?'Secondary action':t==='h1'?'Page headline':t==='nav'?'Global navigation':f['shape.borderRadius']>=12?'Pricing card / content container':'Supporting content';
   const claims=[];
   if(f['color.contrast'].can)claims.push({l:'m',t:`Text/background contrast is ${f['color.contrast'].ratio}:1 — ${f['color.contrast'].aa?'passes':'fails'} WCAG AA.`,ev:ev('color.contrast')});
   else claims.push({l:'m',t:`Contrast can't be measured: ${f['color.contrast'].why}. Check the screenshot manually.`,ev:ev('color.contrast')});
-  claims.push({l:'m',t:`Tap target is ${f['size.width']}×${h}px — ${f['a11y.tapTarget']?'meets':'below'} the 44px guideline.`,ev:ev('size.width','size.height','a11y.tapTarget')});
-  if(f['spacing.scaleBase'])claims.push({l:'m',t:`Padding follows a ${f['spacing.scaleBase']}px scale.`,ev:ev('spacing.padding','spacing.scaleBase')});
+  claims.push({l:'m',t:`Bounds are ${f['size.width']}×${h}px. ${t==='button'?'Target guidance requires criterion-specific checks.':'This element is not assessed as a tap target.'}`,ev:ev('size.width','size.height','a11y.tapTarget')});
+  if(f['spacing.scaleBase'])claims.push({l:'m',t:`Observed padding values are multiples of ${f['spacing.scaleBase']}px; this does not establish an intended scale.`,ev:ev('spacing.padding','spacing.scaleBase')});
   const why=[
-    {l:'i',t:cta?`Emphasis comes from inverted contrast and isolation: a dark fill on a light page makes it the heaviest object in its region, which draws the eye first.`:t==='h1'?`A ${fs}px headline dominates the type scale, so it is read before any body copy. This sets a clear entry point.`:`Restrained styling keeps this element subordinate to the primary content, which protects the hierarchy around it.`,ev:ev('typography.fontSize','color.background','size.height')},
-    {l:'i',t:`Fitts's law reading: ${h>=44?'a comfortable target size':'a small target'} at ${h}px height ${h>=44?'lowers':'raises'} the effort to hit it.`,ev:ev('size.height','a11y.tapTarget')}];
+    {l:'i',t:cta?`Emphasis comes from inverted contrast and isolation: a dark fill on a light page makes it the heaviest object in its region, which may draw attention before lighter nearby actions.`:t==='h1'?`A ${fs}px headline dominates the type scale, so it is likely to establish the entry point before body copy. This sets a clear entry point.`:`Restrained styling keeps this element subordinate to the primary content, which protects the hierarchy around it.`,ev:ev('typography.fontSize','color.background','size.height')},
+    {l:'i',t:`Fitts's law reading: a ${h}px-high target may affect pointing effort; distance and task context are also needed.`,ev:ev('size.height','a11y.tapTarget')}];
   const trade=[{l:'i',t:f['shape.borderRadius']>=12?'Leans friendly and soft over sharp and technical; generous radius signals approachability.':'Leans toward density and clarity over decoration.',ev:ev('shape.borderRadius','shape.border')}];
   return{role,roleClaim:{l:'i',t:`Likely role: ${role.toLowerCase()}, inferred from position, weight and markup.`,ev:ev('structure.role','color.background')},claims,why,trade,chips:[cta?'contrast emphasis':'low emphasis',f['shape.borderRadius']>=8?'rounded corners':'tight corners',f['typography.fontWeight']>=600?'bold weight':'regular weight',t]};
 }
@@ -177,66 +221,80 @@ const boxes=(box,el)=>{if(!el){box.style.display='none';return}
   const p=page.getBoundingClientRect(),r=el.getBoundingClientRect();
   Object.assign(box.style,{display:'block',left:r.left-p.left+page.scrollLeft+'px',top:r.top-p.top+page.scrollTop+'px',width:r.width+'px',height:r.height+'px'});
   box.querySelector('.tag').textContent=`${el.tagName.toLowerCase()} · ${Math.round(r.width)}×${Math.round(r.height)}`};
-const floatBar=()=>{const f=$('#float');if(!S.sel||S.phase==='analyzing'){f.style.display='none';return}
+const floatBar=()=>{const f=$('#float');if(!S.sel||S.phase==='analyzing'||S.phase==='picking'){f.style.display='none';return}
   const p=page.getBoundingClientRect(),r=S.sel.getBoundingClientRect();
-  f.style.display='flex';f.style.left=Math.max(8,r.left-p.left+page.scrollLeft)+'px';f.style.top=r.bottom-p.top+page.scrollTop+10+'px'};
+  f.style.display='flex';f.style.left=Math.max(8,Math.min(page.clientWidth-280,r.left-p.left+page.scrollLeft))+'px';f.style.top=Math.max(page.scrollTop+8,Math.min(r.bottom-p.top+page.scrollTop+10,page.scrollTop+page.clientHeight-52))+'px'};
 page.addEventListener('mousemove',e=>{if(S.phase!=='picking')return;const el=document.elementFromPoint(e.clientX,e.clientY);
   if(el&&site.contains(el)&&el!==site){S.hover=el;boxes($('#hbox'),el)}});
-page.addEventListener('click',e=>{if(S.phase!=='picking'||!S.hover)return;e.preventDefault();e.stopPropagation();choose(S.hover)},true);
+page.addEventListener('click',e=>{if(S.phase!=='picking'||!site.contains(e.target)||e.target===site)return;e.preventDefault();e.stopPropagation();choose(e.target)},true);
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&S.phase==='picking')setPhase(S.sel?'selected':'idle');
-  if(S.sel&&(e.key==='ArrowUp'||e.key==='ArrowDown')){const n=e.key==='ArrowUp'?S.sel.parentElement:S.sel.firstElementChild;if(n&&site.contains(n)&&n!==site){e.preventDefault();choose(n)}}});
-page.addEventListener('scroll',()=>{boxes($('#sbox'),S.sel);floatBar()});
-function choose(el){S.sel=el;S.facts=measure(el);S.analysis=null;boxes($('#hbox'),null);boxes($('#sbox'),el);setPhase('selected')}
-function setPhase(p){S.phase=p;$('#browser').classList.toggle('picking',p==='picking');if(p==='idle'){S.sel=null;boxes($('#sbox'),null);boxes($('#hbox'),null)}
+  if(S.phase==='selected'&&S.sel&&!e.target.matches('input,textarea,select')&&(e.key==='ArrowUp'||e.key==='ArrowDown')){const n=e.key==='ArrowUp'?S.sel.parentElement:S.sel.firstElementChild;if(n&&site.contains(n)&&n!==site){e.preventDefault();choose(n)}}});
+page.addEventListener('scroll',()=>{boxes($('#sbox'),S.sel);floatBar();if(S.phase==='analyzing')positionScan()});
+function choose(el){S.runVersion++;S.sel=el;S.facts=measure(el);if(el===site){S.facts.name='Northwind · whole demo page';S.facts.pageSummary=pageSummary();}S.analysis=null;boxes($('#hbox'),null);boxes($('#sbox'),el);setPhase('selected')}
+function setPhase(p){if(S.phase==='analyzing'&&p!=='analyzing')S.runVersion++;if(p!=='analyzing')stopScan();if(p==='picking'){S.runVersion++;$('#lessonWindow').classList.add('minimized');}if(p==='selected'||p==='idle'||p==='analyzing')$('#lessonWindow').classList.add('minimized');S.phase=p;$('#browser').classList.toggle('picking',p==='picking');if(p==='idle'){S.sel=null;boxes($('#sbox'),null);boxes($('#hbox'),null)}
   if(p==='picking')boxes($('#hbox'),null);render();floatBar()}
 $('#fAnalyze').onclick=runAnalysis;
 $('#fUp').onclick=()=>{const n=S.sel.parentElement;if(n&&n!==site&&site.contains(n))choose(n)};
 $('#fDown').onclick=()=>{const n=S.sel.firstElementChild;if(n)choose(n)};
 
+
+function pageSummary(){
+  const els=[site,...site.querySelectorAll('*')];
+  return {sizes:[...new Set(els.map(e=>getComputedStyle(e).fontSize))].sort((a,b)=>parseFloat(b)-parseFloat(a)),colors:[...new Set(els.flatMap(e=>{const c=getComputedStyle(e);return[c.color,c.backgroundColor]}))].filter(c=>c!=='rgba(0, 0, 0, 0)'),headings:[...site.querySelectorAll('h1,h2,h3,h4,h5,h6')].map(e=>e.tagName+' · '+e.textContent),buttons:site.querySelectorAll('button').length,sections:site.querySelectorAll('section').length};
+}
+function measuredPage(p){return `<div class="card"><h4>Type sizes <span class="lb m">Measured</span></h4><p>${p.sizes.join(' · ')}</p></div><div class="card"><h4>Observed colors <span class="lb m">Measured</span></h4><div style="display:flex;gap:8px;flex-wrap:wrap">${p.colors.map(c=>`<span style="font-size:11px">${sw(c)}</span>`).join('')}</div></div><div class="card"><h4>Structure <span class="lb m">Measured</span></h4><p>${p.buttons} buttons · ${p.sections} sections</p>${p.headings.map(h=>`<p class="muted">${h}</p>`).join('')}</div><p class="muted">Aggregates describe the entire local demo DOM. This prototype does not capture or analyze arbitrary websites.</p>`}
+function analyzePage(f){const p=f.pageSummary;return {role:'Quiet structure. One clear emphasis.',roleClaim:{l:'i',t:'This appears to be a pricing page: three plan containers and repeated purchase actions support comparison.',ev:['page.sections','page.buttons']},chips:['hierarchy','containment','progressive emphasis'],claims:[{l:'m',t:`The page contains ${p.buttons} buttons and ${p.headings.length} headings.`,ev:['page.buttons','page.headings']},{l:'m',t:`Observed type sizes: ${p.sizes.join(', ')}.`,ev:['page.sizes']}],why:[{l:'i',t:'Large headline type gives the page a strong entry point. Smaller plan headings make the alternatives easier to scan as one group.',ev:['page.sizes','page.headings']},{l:'i',t:'The highlighted middle plan likely steers attention toward Growth. This is an interpretation of the visible fill and border, not evidence that users choose it.',ev:['color.background','shape.border']},{l:'i',t:'Repeated action placement can help visitors compare the plans without relearning the layout.',ev:['page.buttons','page.sections']}],trade:[{l:'i',t:'Low information density supports quick scanning, but visitors may need more feature detail before making a confident plan decision.',ev:['page.sections','page.buttons']}]};}
+
 /* ---------- Flow ---------- */
-const STEPS=['Measuring styles','Capturing screenshot','Checking rules (WCAG, Fitts…)','Asking model (Inferred layer)'];
+const STEPS=['Reading computed styles','Preparing capture preview (demo)','Checking supported rules','Composing a lesson (simulated AI)'];
 async function runAnalysis(){if(!S.keyOk){toast('Add an API key first');return}
-  setPhase('analyzing');S.step=0;render();
-  for(let i=0;i<STEPS.length;i++){S.step=i;render();await new Promise(r=>setTimeout(r,i===3?1100:550))}
-  S.analysis=analyze(S.facts);S.step=4;setPhase('result')}
+  const version=++S.runVersion,facts=structuredClone(S.facts);
+  S.userHid=false;setPhase('analyzing');startScan();S.step=0;render();
+  for(let i=0;i<STEPS.length;i++){if(version!==S.runVersion)return;S.step=i;render();$('#scanStatus').textContent=STEPS[i];await new Promise(r=>setTimeout(r,i===3?1100:550))}
+  if(version!==S.runVersion)return;S.analysis=analyze(facts);S.step=4;setPhase('result');if(!S.userHid)$('#lessonWindow').classList.remove('minimized')}
 const claim=(c)=>`<div class="claim"><span class="lb ${c.l}">${c.l==='m'?'Measured':'Inferred'}</span><p>${c.t}</p><div class="ev">${c.ev.map(e=>`<span class="chip">${e}</span>`).join('')}</div></div>`;
 const val=v=>typeof v==='object'&&!Array.isArray(v)&&v?'':Array.isArray(v)?v.join(' '):v===null?'—':v;
 const sw=c=>`<span class="swatch" style="background:${c}"></span>${c}`;
-function measured(f){const c=f['color.contrast'];
+function measured(f){if(f.pageSummary)return measuredPage(f.pageSummary);const c=f['color.contrast'];
   const sec=(t,rows)=>`<div class="card"><h4>${t}<span class="lb m">Measured</span></h4><dl class="kv">${rows.map(([k,v])=>`<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl></div>`;
   return sec('Typography',[['Family',f['typography.fontFamily']],['Size / weight',`${f['typography.fontSize']}px / ${f['typography.fontWeight']}`],['Line height',f['typography.lineHeight']],['Letter spacing',f['typography.letterSpacing']+'px']])+
   sec('Color',[['Text',sw(f['color.text'])],['Background',sw(f['color.background'])],['Contrast',c.can?`${c.ratio}:1 · AA <span class="${c.aa?'pass':'fail'}">${c.aa?'pass':'fail'}</span> · AAA <span class="${c.aaa?'pass':'fail'}">${c.aaa?'pass':'fail'}</span>`:`<span class="cant">Can't measure</span> — ${c.why}`]])+
-  sec('Spacing & size',[['Padding',f['spacing.padding'].join(' ')],['Scale',f['spacing.scaleBase']?`multiples of ${f['spacing.scaleBase']}`:'off-grid'],['W × H',`${f['size.width']} × ${f['size.height']}`]])+
-  sec('Shape & structure',[['Radius',f['shape.borderRadius']+'px'],['Border',f['shape.border']],['Shadow',f['shape.boxShadow']],['Tag / role',`${f.tag} / ${f['structure.role']||'—'}`],['Same style on page',f['consistency.sameStyleCount']+'×']])}
+  sec('Spacing & size',[['Padding',f['spacing.padding'].join(' ')],['Scale',f['spacing.scaleBase']?`multiples of ${f['spacing.scaleBase']}`:'No common 4/8px multiple'],['W × H',`${f['size.width']} × ${f['size.height']}`]])+
+  sec('Shape & structure',[['Radius',f['shape.borderRadius']+'px'],['Border',f['shape.border']],['Shadow',f['shape.boxShadow']],['Tag / role',`${f.tag} / ${f['structure.role']||'—'}`],['Sampled fingerprint count',f['consistency.sameStyleCount']+'×']])}
 function render(){
   $('#libn').textContent=S.lib.length;
+  $('#lessonWindow').classList.toggle('expanded',S.tab==='compare');
+  $('#browser').classList.toggle('page-mode',S.sel===site);
+
   document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===S.tab));
   document.querySelectorAll('#flow button').forEach(b=>b.classList.toggle('on',b.dataset.k===flowKey()));
   const b=$('#pbody'),ft=$('#pfoot');ft.innerHTML='';
+  if(S.tab!=='inspect')$('#float').style.display='none';
   if(S.tab==='library')return renderLib(b,ft);
   if(S.tab==='compare')return renderCmp(b,ft);
   const P=S.phase;
-  if(P==='idle'){b.innerHTML=`<div class="center"><div class="big">⌖</div><h3 style="margin:0 0 6px">Inspect design language</h3><p class="muted">Pick any element on the page to see what it does, why it works, and what's measurable.</p></div>
-    <div class="card"><h4>How labels work</h4><p style="margin:0 0 6px"><span class="lb m">Measured</span> read directly from the page. Same answer every time.</p><p style="margin:0"><span class="lb i">Inferred</span> AI interpretation, always tied to a measured value.</p></div>`;
+  if(P==='idle'){b.innerHTML=`<div class="center"><img class="welcome-art" src="assets/detective.png" alt="A detective examining a detail"><h3 style="margin:0 0 12px">Every website has<br>something to teach you.</h3><p class="muted">Start with a button, a card, or a whole page.<br>Discover the details. Understand the decisions.</p></div>
+    <div class="card"><h4>How labels work</h4><p style="margin:0 0 6px"><span class="lb m">Measured</span> values read from the captured page and supported deterministic checks.</p><p style="margin:0"><span class="lb i">Inferred</span> a design interpretation, linked to its evidence.</p></div>`;
     ft.innerHTML=`<button class="btn p full" id="pick">Pick an element</button>`;$('#pick').onclick=()=>setPhase('picking')}
   if(P==='picking'){b.innerHTML=`<div class="center"><div class="big">☝︎</div><h3 style="margin:0 0 6px">Hover and click an element</h3><p class="muted">The highlight shows what you'll select. Use ↑ ↓ to move to a parent or child.</p></div>`;
     ft.innerHTML=`<button class="btn full" id="cancel">Cancel (Esc)</button>`;$('#cancel').onclick=()=>setPhase(S.sel?'selected':'idle')}
   if(P==='selected'){const f=S.facts,path=[];for(let n=S.sel;n&&n!==site&&path.length<4;n=n.parentElement)path.unshift(n);
     b.innerHTML=`<div class="crumbs">${path.map((n,i)=>`<button data-i="${i}" class="${n===S.sel?'on':''}">${n.tagName.toLowerCase()}</button>`).join('<span class="muted">›</span>')}</div>
       <div class="card"><b>${f.name}</b><div class="muted">${f['size.width']}×${f['size.height']} · ${f['typography.fontSize']}px ${f['typography.fontFamily']}</div></div>${measured(f)}
-      <div class="disc"><b>What gets sent to the model:</b> a screenshot of this element, the measured values above and our rules library. Nothing else from the page.</div>`;
+      <div class="disc"><b>What gets sent to the model:</b> a screenshot of this element, the measured values above and our rules library. Review your selection before sending. In this prototype, no data leaves your browser.</div>`;
     b.querySelectorAll('.crumbs button').forEach(x=>x.onclick=()=>choose(path[+x.dataset.i]));
-    ft.innerHTML=`<button class="btn" id="repick">Re-pick</button><button class="btn p" style="flex:1" id="an">✦ Analyze this element</button>`;$('#repick').onclick=()=>setPhase('picking');$('#an').onclick=runAnalysis}
-  if(P==='analyzing'){b.innerHTML=`<div class="card"><h4>Analyzing ${S.facts.name}</h4><ul class="steps">${STEPS.map((s,i)=>`<li class="${i<S.step?'done':i===S.step?'now':''}"><span class="dot">${i<S.step?'✓':''}</span>${s}</li>`).join('')}</ul></div><p class="muted">Steps 1–3 are deterministic and instant. Only step 4 uses AI.</p>`}
-  if(P==='result'){const a=S.analysis,f=S.facts;b.innerHTML=`
+    ft.innerHTML=`<button class="btn" id="repick">Re-pick</button><button class="btn p" style="flex:1" id="an">Analyze selection</button>`;$('#repick').onclick=()=>setPhase('picking');$('#an').onclick=runAnalysis}
+  if(P==='analyzing'){b.innerHTML=`<div class="card"><h4>Analyzing ${S.facts.name}</h4><ul class="steps">${STEPS.map((s,i)=>`<li class="${i<S.step?'done':i===S.step?'now':''}"><span class="dot">${i<S.step?'✓':''}</span>${s}</li>`).join('')}</ul></div><p class="muted">You can hide this window and keep browsing. This demo simulates capture and AI interpretation.</p>`}
+  if(P==='result'){const a=S.analysis,f=S.facts;b.innerHTML=`<div class="seg" id="resultTabs"><button data-view="lesson" class="${S.resultTab==='lesson'?'on':''}">Lesson</button><button data-view="facts" class="${S.resultTab==='facts'?'on':''}">Measurements</button></div><div class="muted" style="font-size:11px;margin-bottom:18px">northwind.example · ${f.pageSummary?'Page':'Element'} · captured this session</div>`+(S.resultTab==='facts'?measured(f):`
     <div class="card"><h4>${f.name}<span class="lb i">Inferred</span></h4><div style="font-size:17px;font-weight:700;margin-bottom:6px">${a.role}</div>${claim(a.roleClaim).replace('<div class="claim">','<div>')}<div class="ev" style="margin-top:8px">${a.chips.map(c=>`<span class="chip v">${c}</span>`).join('')}</div></div>
     <div class="card"><h4>Rules checked<span class="lb m">Measured</span></h4>${a.claims.map(claim).join('')}</div>
     <div class="card"><h4>Why it works / where it falls short<span class="lb i">Inferred</span></h4>${a.why.map(claim).join('')}</div>
     <div class="card"><h4>Trade-off<span class="lb i">Inferred</span></h4>${a.trade.map(claim).join('')}</div>
-    <details><summary class="muted" style="cursor:pointer;margin-bottom:8px">All measured values</summary>${measured(f)}</details>`;
+    <details><summary class="muted" style="cursor:pointer;margin-bottom:8px">All measured values</summary>${measured(f)}</details>`);
+    b.querySelectorAll('#resultTabs button').forEach(x=>x.onclick=()=>{S.resultTab=x.dataset.view;render()});
     ft.innerHTML=`<button class="btn" id="again">Pick another</button><button class="btn" id="dl">Export</button><button class="btn p" style="flex:1" id="save">Save to library</button>`;
     $('#again').onclick=()=>setPhase('picking');$('#dl').onclick=()=>{S.xtab='md';S.exportOne=true;S.tab='compare';S.cmp=[saveItem(true)];render()};
-    $('#save').onclick=()=>{saveItem();toast('Saved to library')}}
+    $('#save').onclick=()=>{const existed=S.lib.some(i=>i.el===S.sel);saveItem();$('#save').textContent='Saved';if(existed)toast('Already in your saved ideas');else celebrateIdea()}}
 }
 function flowKey(){if(S.tab!=='inspect')return S.tab;return S.phase}
 function saveItem(silent){const ex=S.lib.find(i=>i.el===S.sel);if(ex&&!silent)return ex;if(ex)return ex;
@@ -255,38 +313,68 @@ function seed(){const picks=['.cta','.plan.hot','.hero h1'];picks.forEach(s=>{co
 const GROUPS=[['Typography',['typography.fontFamily','typography.fontSize','typography.fontWeight']],['Color',['color.text','color.background']],['Shape',['shape.borderRadius','shape.border']],['Spacing',['spacing.padding']]];
 function renderCmp(b,ft){const items=S.cmp;
   if(items.length<1){b.innerHTML=`<div class="center"><div class="big">⇄</div><h3 style="margin:0 0 6px">Compare 2–3 items</h3><p class="muted">Select items in your library, then decide what to borrow from each.</p></div>`;ft.innerHTML=`<button class="btn p full" id="gl">Go to library</button>`;$('#gl').onclick=()=>{S.tab='library';render()};return}
-  const single=items.length===1;
+  const single=items.length===1;const title=i=>i.f.name;
   items.forEach((_,i)=>{});GROUPS.forEach(([g])=>{if(S.pickFor[g]===undefined||!items[S.pickFor[g]])S.pickFor[g]=0});
   const rows=GROUPS.flatMap(([g,keys])=>keys.map(k=>{const vals=items.map(i=>val(i.f[k]));const diff=new Set(vals).size>1;return`<tr><th>${k.split('.')[1]}</th>${vals.map(v=>`<td class="${diff?'diff':''}">${v}</td>`).join('')}</tr>`}));
-  b.innerHTML=`${single?'':`<div class="card"><h4>Side by side<span class="lb m">Measured</span></h4><table><tr><th></th>${items.map((i,n)=>`<th>${'ABC'[n]} · ${i.a.role}</th>`).join('')}</tr>${rows.join('')}</table><p class="muted" style="margin:8px 0 0">Highlighted cells differ.</p></div>
+  b.innerHTML=`${single?'':`<div class="card"><h4>Compare your references</h4><div style="display:grid;grid-template-columns:repeat(${items.length},minmax(0,1fr));gap:12px">${items.map((i,n)=>`<div><div class="thumb"><span style="${swatchStyle(i.f)}">${esc(i.f.name.slice(0,24))}</span></div><b style="font-size:12px">${'ABC'[n]} · ${esc(i.f.name)}</b><p class="muted" style="font-size:11px">${i.site} · schematic preview</p></div>`).join('')}</div></div><div class="card"><h4>Side by side<span class="lb m">Measured</span></h4><table><tr><th></th>${items.map((i,n)=>`<th>${'ABC'[n]} · ${title(i)}</th>`).join('')}</tr>${rows.join('')}</table><p class="muted" style="margin:8px 0 0">Highlighted cells differ.</p></div>
     <div class="card"><h4>Read-across<span class="lb i">Inferred</span></h4><p style="margin:0">${items[0].a.role} vs ${items[1].a.role}: the first spends its emphasis on contrast and size; the second relies on containment and spacing. Borrow emphasis from A for actions and containment from B for grouping.</p></div>
     <div class="card"><h4>What to borrow</h4>${GROUPS.map(([g])=>`<div style="margin-bottom:8px"><div class="muted">${g}</div><div class="borrow">${items.map((_,n)=>`<label><input type="radio" name="g-${g}" value="${n}" ${S.pickFor[g]===n?'checked':''}><span>${'ABC'[n]}</span></label>`).join('')}</div></div>`).join('')}</div>`}
     <div class="card"><h4>Your design direction</h4><div class="seg" id="seg">${[['md','DESIGN.md'],['json','tokens.json'],['css','CSS vars']].map(([k,t])=>`<button data-k="${k}" class="${S.xtab===k?'on':''}">${t}</button>`).join('')}</div><pre id="xout">${esc(exportText(items))}</pre></div>`;
   b.querySelectorAll('input[type=radio]').forEach(x=>x.onchange=()=>{S.pickFor[x.name.slice(2)]=+x.value;render()});
   b.querySelectorAll('#seg button').forEach(x=>x.onclick=()=>{S.xtab=x.dataset.k;render()});
-  ft.innerHTML=`<button class="btn" id="back">← Library</button><button class="btn p" style="flex:1" id="copy">Copy ${({md:'DESIGN.md',json:'tokens.json',css:'CSS'})[S.xtab]}</button>`;
-  $('#back').onclick=()=>{S.tab='library';render()};$('#copy').onclick=()=>{navigator.clipboard?.writeText(exportText(items));toast('Copied')}}
+  ft.innerHTML=`<button class="btn" id="back">← Library</button><button class="btn p" style="flex:1" id="copy">Copy</button><button class="btn p" id="download">Download</button>`;
+  $('#download').onclick=()=>{const blob=new Blob([exportText(items)],{type:S.xtab==='json'?'application/json':'text/plain'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download={md:'DESIGN.md',json:'tokens.json',css:'variables.css'}[S.xtab];a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);toast('Design direction downloaded')};
+  $('#back').onclick=()=>{S.tab='library';render()};$('#copy').onclick=async()=>{try{await navigator.clipboard.writeText(exportText(items));toast('Copied')}catch{toast('Clipboard unavailable. Use Download instead.')}}}
 const esc=s=>s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
 function pickVal(items,g,k){return items[S.pickFor[g]||0].f[k]}
 function tokens(items){const t={};GROUPS.forEach(([g,keys])=>keys.forEach(k=>{t[k]=pickVal(items,g,k)}));return t}
 function exportText(items){const t=tokens(items),src=g=>'ABC'[S.pickFor[g]||0];
   if(S.xtab==='json')return JSON.stringify({font:{family:{$value:t['typography.fontFamily'],$extensions:{label:'measured',from:src('Typography')}},size:{$value:t['typography.fontSize']+'px',$extensions:{label:'measured'}},weight:{$value:t['typography.fontWeight'],$extensions:{label:'measured'}}},color:{text:{$value:t['color.text'],$extensions:{label:'measured',from:src('Color')}},background:{$value:t['color.background'],$extensions:{label:'measured'}}},radius:{$value:t['shape.borderRadius']+'px',$extensions:{label:'measured'}},direction:{emphasis:{$value:items[0].a.chips[0],$extensions:{label:'inferred'}}}},null,2);
-  if(S.xtab==='css')return`:root{\n  --font-family: ${t['typography.fontFamily']}; /* Measured */\n  --font-size: ${t['typography.fontSize']}px; /* Measured */\n  --color-text: ${t['color.text']}; /* Measured */\n  --color-bg: ${t['color.background']}; /* Measured */\n  --radius: ${t['shape.borderRadius']}px; /* Measured */\n  --space: ${t['spacing.padding'][0]}px ${t['spacing.padding'][1]}px; /* Measured */\n}`;
-  return`# Design direction\n\n## Typography — from ${src('Typography')} [Measured]\n- Family: ${t['typography.fontFamily']}\n- Size / weight: ${t['typography.fontSize']}px / ${t['typography.fontWeight']}\n\n## Color — from ${src('Color')} [Measured]\n- Text ${t['color.text']} on ${t['color.background']}\n\n## Shape — from ${src('Shape')} [Measured]\n- Radius ${t['shape.borderRadius']}px, border ${t['shape.border']}\n\n## Intent — [Inferred]\n- ${items.map(i=>i.a.role).join('; ')}\n- Emphasis technique: ${items[0].a.chips[0]}`}
+  if(S.xtab==='css')return`:root{\n  --font-family: ${t['typography.fontFamily']}; /* Measured: northwind.example demo capture */\n  --font-size: ${t['typography.fontSize']}px; /* Measured: northwind.example demo capture */\n  --color-text: ${t['color.text']}; /* Measured: northwind.example demo capture */\n  --color-bg: ${t['color.background']}; /* Measured: northwind.example demo capture */\n  --radius: ${t['shape.borderRadius']}px; /* Measured: northwind.example demo capture */\n  --space: ${t['spacing.padding'][0]}px ${t['spacing.padding'][1]}px; /* Measured: northwind.example demo capture */\n}`;
+  return`# Design direction\n\nSource: northwind.example, local demo. Values describe this capture.\n\n## Typography — from ${src('Typography')} [Measured]\n- Family: ${t['typography.fontFamily']}\n- Size / weight: ${t['typography.fontSize']}px / ${t['typography.fontWeight']}\n\n## Color — from ${src('Color')} [Measured]\n- Text ${t['color.text']} on ${t['color.background']}\n\n## Shape — from ${src('Shape')} [Measured]\n- Radius ${t['shape.borderRadius']}px, border ${t['shape.border']}\n\n## Intent — [Inferred]\n- ${items.map(i=>i.a.role).join('; ')}\n- Emphasis technique: ${items[0].a.chips[0]}`}
 
 /* ---------- Chrome ---------- */
 document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>{S.tab=b.dataset.t;render()});
 const FLOW=[['idle','1 Idle'],['picking','2 Pick'],['selected','3 Selected'],['analyzing','4 Analyzing'],['result','5 Result'],['library','6 Library'],['compare','7 Compare + export']];
 FLOW.forEach(([k,t])=>{const b=document.createElement('button');b.dataset.k=k;b.textContent=t;$('#flow').append(b);
-  b.onclick=async()=>{S.tab='inspect';
+  b.onclick=async()=>{$('#lessonWindow').classList.remove('minimized');S.tab='inspect';
     if(k==='library'){S.tab='library';if(!S.lib.length)seed();return render()}
-    if(k==='compare'){if(!S.lib.length)seed();S.cmp=S.lib.slice(0,2);S.tab='compare';return render()}
+    if(k==='compare'){if(S.lib.length<2)seed();S.cmp=S.lib.slice(0,2);S.tab='compare';return render()}
     if(k==='idle')return setPhase('idle');if(k==='picking')return setPhase('picking');
     if(!S.sel)choose(site.querySelector('.cta'));
     if(k==='selected')return setPhase('selected');if(k==='analyzing'){runAnalysis();return}
-    if(k==='result'){S.analysis=analyze(S.facts);return setPhase('result')}}});
+    if(k==='result'){S.analysis=analyze(S.facts);setPhase('result');return $('#lessonWindow').classList.remove('minimized')}}});
 function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1400)}
-render();
+
+const win=$('#lessonWindow');
+$('#minimize').onclick=()=>{S.userHid=true;win.classList.add('minimized')};
+$('#closeWindow').onclick=()=>{S.userHid=true;boxes($('#sbox'),null);$('#float').style.display='none';win.classList.add('minimized')};
+$('#dockResume').onclick=()=>{S.tab='inspect';if(S.phase==='picking')setPhase(S.sel?'selected':'idle');render();win.classList.remove('minimized');collapseMenu()};
+$('#dockPick').onclick=()=>{S.tab='inspect';setPhase('picking');collapseMenu()};
+$('#dockPage').onclick=()=>{S.tab='inspect';choose(site);collapseMenu();toast('Whole demo page selected. Click Scan selection to analyze.')};
+$('#dockLibrary').onclick=()=>{win.classList.remove('minimized');S.tab='library';render();collapseMenu()};
+let drag=null;
+$('#dragHandle').addEventListener('pointerdown',e=>{if(innerWidth<560)return;const r=win.getBoundingClientRect();drag={x:e.clientX,y:e.clientY,left:r.left,top:r.top};e.currentTarget.setPointerCapture(e.pointerId)});
+$('#dragHandle').addEventListener('pointermove',e=>{if(!drag)return;const stage=$('.stage').getBoundingClientRect();win.style.left=Math.max(8,Math.min(stage.width-win.offsetWidth-8,drag.left+e.clientX-drag.x-stage.left))+'px';win.style.top=Math.max(8,Math.min(stage.height-win.offsetHeight-84,drag.top+e.clientY-drag.y-stage.top))+'px';win.style.right='auto';win.style.bottom='auto'});
+$('#dragHandle').addEventListener('pointerup',()=>drag=null);
+window.addEventListener('resize',()=>{win.style.left='';win.style.top='';win.style.right='';win.style.bottom='';boxes($('#sbox'),S.sel);floatBar();if(S.phase==='analyzing')positionScan()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){collapseMenu();if(S.phase!=='picking'){S.userHid=true;win.classList.add('minimized');$('#mascotButton').focus()}}});
+
+function positionScan(){if(!S.sel)return;const r=S.sel.getBoundingClientRect(),p=page.getBoundingClientRect();const left=Math.max(0,r.left-p.left),top=Math.max(0,r.top-p.top),right=Math.min(page.clientWidth,r.right-p.left),bottom=Math.min(page.clientHeight,r.bottom-p.top);const width=Math.max(0,right-left),height=Math.max(0,bottom-top);Object.assign($('#scanOverlay').style,{left:left+page.scrollLeft+'px',top:top+page.scrollTop+'px',width:width+'px',height:height+'px'});$('#scanOverlay').style.setProperty('--travel',Math.max(0,height-4)+'px');Object.assign($('#scanStatus').style,{left:Math.min(left,Math.max(8,page.clientWidth-280))+page.scrollLeft+'px',top:Math.min(bottom+10,page.clientHeight-44)+page.scrollTop+'px'});}
+function startScan(){positionScan();$('#scanOverlay').classList.add('active');$('#scanStatus').classList.add('active');$('#scanStatus').textContent=STEPS[0];collapseMenu();}
+function stopScan(){$('#scanOverlay').classList.remove('active');$('#scanStatus').classList.remove('active');}
+const launcher=$('#peeperLauncher'),mascot=$('#mascotButton');let menuTimer,celebrationTimer,keyboardMode=false;
+document.addEventListener('keydown',()=>keyboardMode=true);
+document.addEventListener('pointerdown',()=>keyboardMode=false);
+function collapseMenu(){clearTimeout(menuTimer);launcher.classList.remove('open');mascot.setAttribute('aria-expanded','false');mascot.setAttribute('aria-label','Open Pixel Peeper controls');}
+function expandMenu(){clearTimeout(menuTimer);launcher.classList.add('open');mascot.setAttribute('aria-expanded','true');mascot.setAttribute('aria-label','Close Pixel Peeper controls');}
+mascot.onclick=e=>{if(launcher.classList.contains('open'))collapseMenu();else{expandMenu();if(e.detail===0)$('#dockPick').focus()}};
+launcher.addEventListener('pointerenter',()=>clearTimeout(menuTimer));
+launcher.addEventListener('pointerleave',()=>{menuTimer=setTimeout(()=>{if(!keyboardMode||!launcher.contains(document.activeElement))collapseMenu()},300)});
+launcher.addEventListener('focusout',()=>{menuTimer=setTimeout(()=>{if(!launcher.contains(document.activeElement))collapseMenu()},150)});
+document.addEventListener('pointerdown',e=>{if(!launcher.contains(e.target))collapseMenu()});
+function celebrateIdea(){clearTimeout(celebrationTimer);collapseMenu();launcher.classList.add('collected');$('#mascotStatus').textContent='Idea stolen. Source credited. Saved!';celebrationTimer=setTimeout(()=>{launcher.classList.remove('collected');$('#mascotStatus').textContent=''},2800);}
+render();win.classList.add('minimized');
 </script>
 </body>
 </html>
