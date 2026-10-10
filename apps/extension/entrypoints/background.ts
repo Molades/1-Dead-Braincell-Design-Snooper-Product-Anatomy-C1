@@ -1,8 +1,7 @@
 import { analyze, AnalysisError } from '@pixelpeeper/analysis';
 import { evaluate } from '@pixelpeeper/rules';
 import { Facts } from '@pixelpeeper/schema';
-
-export const API_KEY = 'pixelpeeper.apiKey';
+import { activeKey, activeModel, loadSettings, PROVIDERS } from '../components/settings';
 /** Long edge cap for the screenshot; larger images are downscaled before upload. */
 const MAX_EDGE = 1568;
 
@@ -14,10 +13,6 @@ type Msg =
   | { type: 'pp:capture'; rect: Rect; dpr: number }
   | { type: 'pp:analyze'; facts: unknown; scope: 'element' | 'page'; image: Image };
 
-async function apiKey(): Promise<string | null> {
-  const data = await chrome.storage.local.get(API_KEY);
-  return typeof data[API_KEY] === 'string' && data[API_KEY] ? data[API_KEY] : null;
-}
 
 function toBase64(buffer: ArrayBuffer): string {
   const bytes = new Uint8Array(buffer);
@@ -43,7 +38,7 @@ async function capture(windowId: number, rect: Rect, dpr: number): Promise<Image
 async function handle(msg: Msg, sender: chrome.runtime.MessageSender): Promise<unknown> {
   switch (msg.type) {
     case 'pp:status':
-      return { hasKey: !!(await apiKey()) };
+      return { hasKey: !!activeKey(await loadSettings()) };
     case 'pp:open-options':
       await chrome.runtime.openOptionsPage();
       return { ok: true };
@@ -51,12 +46,13 @@ async function handle(msg: Msg, sender: chrome.runtime.MessageSender): Promise<u
       if (!sender.tab?.windowId) return { error: 'No tab to capture.' };
       return { image: await capture(sender.tab.windowId, msg.rect, msg.dpr) };
     case 'pp:analyze': {
-      const key = await apiKey();
-      if (!key) return { error: 'Add your API key in Pixel Peeper settings.', code: 'no-key' };
+      const settings = await loadSettings();
+      const key = activeKey(settings);
+      if (!key) return { error: `Add your ${PROVIDERS[settings.provider].label} API key in Pixel Peeper settings.`, code: 'no-key' };
       const facts = Facts.parse(msg.facts);
       // Rules are recomputed here from the facts so the model sees exactly what the engine decided.
       const results = evaluate(facts, { scope: msg.scope });
-      const analysis = await analyze({ apiKey: key, facts, results, image: msg.image, scope: msg.scope, signal: AbortSignal.timeout(180_000) });
+      const analysis = await analyze({ provider: settings.provider, model: activeModel(settings), apiKey: key, facts, results, image: msg.image, scope: msg.scope, signal: AbortSignal.timeout(180_000) });
       return { analysis };
     }
   }

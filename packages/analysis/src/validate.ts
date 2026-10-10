@@ -48,6 +48,7 @@ export interface ValidateContext {
   scope: 'element' | 'page';
   model: string;
   rulesVersion: string;
+  provider?: string;
 }
 
 /**
@@ -94,7 +95,7 @@ export function validate(output: ModelOutput, ctx: ValidateContext): Analysis {
     visualOnly: output.visualOnly.map((v) => toClaim(v.text, [], { visualOnly: true })).filter((c): c is Claim => c !== null),
     vocabulary: [...new Set(output.vocabulary.map((v) => v.trim()).filter(Boolean))].slice(0, 8),
     rejected,
-    modelInfo: { provider: 'anthropic', model: ctx.model },
+    modelInfo: { provider: ctx.provider ?? 'anthropic', model: ctx.model },
     rulesLibraryVersion: ctx.rulesVersion,
     createdAt: new Date().toISOString(),
   };

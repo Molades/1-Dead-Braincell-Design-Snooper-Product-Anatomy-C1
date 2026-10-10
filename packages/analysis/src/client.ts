@@ -5,17 +5,18 @@ import { RULES_VERSION } from '@pixelpeeper/rules';
 import { ModelOutput } from './output';
 import { buildUserContent, SYSTEM_PROMPT, type PromptInput } from './prompt';
 import { validate } from './validate';
+import { AnalysisError } from './errors';
+import { analyzeWithGroq, GROQ_DEFAULT_MODEL } from './groq';
+
+export type Provider = 'anthropic' | 'groq';
 
 export const DEFAULT_MODEL = 'claude-opus-5-5';
+export const DEFAULT_MODELS: Record<Provider, string> = { anthropic: DEFAULT_MODEL, groq: GROQ_DEFAULT_MODEL };
 
-export type AnalysisErrorCode = 'invalid-key' | 'rate-limited' | 'refused' | 'truncated' | 'unparseable' | 'network' | 'api';
-
-export class AnalysisError extends Error {
-  constructor(public code: AnalysisErrorCode, message: string) { super(message); }
-}
 
 export interface AnalyzeOptions extends PromptInput {
   apiKey: string;
+  provider?: Provider;
   model?: string;
   signal?: AbortSignal;
   /** Test seam. */
@@ -27,7 +28,8 @@ export interface AnalyzeOptions extends PromptInput {
  * Uses the user's own key, so it runs from the extension's service worker.
  */
 export async function analyze(opts: AnalyzeOptions): Promise<Analysis> {
-  const model = opts.model ?? DEFAULT_MODEL;
+  if (opts.provider === 'groq') return analyzeWithGroq(opts);
+  const model = opts.model || DEFAULT_MODEL;
   const client = opts.client ?? new Anthropic({ apiKey: opts.apiKey, dangerouslyAllowBrowser: true, maxRetries: 1 });
   let response;
   try {
@@ -57,7 +59,7 @@ export async function analyze(opts: AnalyzeOptions): Promise<Analysis> {
   if (response.stop_reason === 'max_tokens') throw new AnalysisError('truncated', 'The response was cut off. Try again.');
   const parsed = response.parsed_output;
   if (!parsed) throw new AnalysisError('unparseable', 'The model response could not be read.');
-  return validate(parsed, { facts: opts.facts, results: opts.results, scope: opts.scope, model: response.model ?? model, rulesVersion: RULES_VERSION });
+  return validate(parsed, { facts: opts.facts, results: opts.results, scope: opts.scope, model: response.model ?? model, rulesVersion: RULES_VERSION, provider: 'anthropic' });
 }
 
 export type { Facts, RuleResult };

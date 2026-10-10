@@ -6,7 +6,8 @@ import { JUDGMENT_RULES, RULES_VERSION } from '@pixelpeeper/rules';
  * Stable across requests for one rules version, so it can be prompt-cached.
  * Never put per-request data (URLs, timestamps, facts) in here.
  */
-export const SYSTEM_PROMPT = `You are Pixel Peeper's design teacher. A learner selected part of a live webpage. You receive:
+export function systemPrompt({ library = true }: { library?: boolean } = {}): string {
+  return `You are Pixel Peeper's design teacher. A learner selected part of a live webpage. You receive:
 1. A screenshot of the selection (only the visible part, if it extends beyond the viewport).
 2. FACTS: computed styles measured from the page. These are ground truth.
 3. MEASURED RULE RESULTS: deterministic checks already decided by code (WCAG contrast, target size, and similar).
@@ -22,10 +23,15 @@ Rules for every claim:
 - Do not invent attention scores, conversion effects, or user research.
 - Fitts's law does not imply a universal pixel threshold. Do not present 44px as a WCAG AA requirement.
 - If something is visible only in the screenshot, put it in visualOnly, with no numbers.
-- Write for a designer who is learning: plain, specific, short sentences.
+- Write for a designer who is learning: plain, specific, short sentences.${library ? `
 
 Judgment rules library (version ${RULES_VERSION}):
-${JUDGMENT_RULES.map((r) => `- ${r.id} — ${r.name}: ${r.summary}`).join('\n')}`;
+${JUDGMENT_RULES.map((r) => `- ${r.id} — ${r.name}: ${r.summary}`).join('\n')}` : ''}`;
+}
+
+export const SYSTEM_PROMPT = systemPrompt();
+/** Shorter system prompt for token-metered providers; the judgment questions still arrive in the user turn. */
+export const COMPACT_SYSTEM_PROMPT = systemPrompt({ library: false });
 
 export interface PromptInput {
   facts: Facts;
@@ -49,21 +55,23 @@ function compactFacts(facts: Facts): unknown {
   return walk(rest);
 }
 
-export function buildUserContent({ facts, results, image, scope }: PromptInput): Anthropic.Beta.BetaContentBlockParam[] {
+/** The text half of the user turn; providers attach the screenshot their own way. */
+export function buildUserText({ facts, results, scope }: Omit<PromptInput, 'image'>, { compact = false }: { compact?: boolean } = {}): string {
   const measured = results
     .filter((r) => r.label === 'measured' && r.status !== 'not-applicable')
-    .map(({ ruleId, status, message, actual, threshold, criterion }) => ({ ruleId, status, message, actual, threshold, criterion }));
+    .map(({ ruleId, status, message, actual, threshold, criterion }) => (compact ? { ruleId, status, message } : { ruleId, status, message, actual, threshold, criterion }));
   const queued = results.filter((r) => r.status === 'needs-judgment').map((r) => ({ ruleId: r.ruleId, question: r.message, evidence: r.evidence }));
   return [
-    { type: 'image', source: { type: 'base64', media_type: image.mediaType, data: image.base64 } },
-    {
-      type: 'text',
-      text: [
-        `SCOPE: ${scope}`,
-        `FACTS:\n${JSON.stringify(compactFacts(facts))}`,
-        `MEASURED RULE RESULTS:\n${JSON.stringify(measured)}`,
-        `JUDGMENT RULES TO ANSWER:\n${JSON.stringify(queued)}`,
-      ].join('\n\n'),
-    },
+    `SCOPE: ${scope}`,
+    `FACTS:\n${JSON.stringify(compactFacts(facts))}`,
+    `MEASURED RULE RESULTS:\n${JSON.stringify(measured)}`,
+    `JUDGMENT RULES TO ANSWER:\n${JSON.stringify(queued)}`,
+  ].join('\n\n');
+}
+
+export function buildUserContent(input: PromptInput): Anthropic.Beta.BetaContentBlockParam[] {
+  return [
+    { type: 'image', source: { type: 'base64', media_type: input.image.mediaType, data: input.image.base64 } },
+    { type: 'text', text: buildUserText(input) },
   ];
 }

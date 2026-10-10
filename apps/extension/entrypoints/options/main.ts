@@ -1,5 +1,8 @@
-const KEY = 'pixelpeeper.apiKey';
+import { DEFAULT_MODELS } from '@pixelpeeper/analysis';
+import { loadSettings, PROVIDERS, saveSettings, type Provider, type Settings } from '../../components/settings';
+
 const app = document.getElementById('app')!;
+const ids = Object.keys(PROVIDERS) as Provider[];
 
 app.innerHTML = `
   <style>
@@ -7,49 +10,77 @@ app.innerHTML = `
     body{margin:0}main{max-width:560px;margin:48px auto;padding:0 16px}
     h1{font:400 32px/1.2 Georgia,serif;margin:0 0 8px}h2{font:500 15px system-ui;margin:28px 0 8px}
     p,li{color:#4a4a45}.muted{color:#62625d;font-size:13px}
-    label{display:block;font-weight:500;margin-bottom:6px}
-    input{width:100%;box-sizing:border-box;font:inherit;padding:10px 12px;border:1px solid #cfcfc5;border-radius:9px;background:#fffefa}
+    label{display:block;font-weight:500;margin:14px 0 6px}
+    input[type=password],input[type=text]{width:100%;box-sizing:border-box;font:inherit;padding:10px 12px;border:1px solid #cfcfc5;border-radius:9px;background:#fffefa}
     input:focus-visible,button:focus-visible{outline:3px solid #345be4;outline-offset:2px}
-    .row{display:flex;gap:8px;margin-top:12px}
+    fieldset{border:0;padding:0;margin:0;display:flex;gap:8px}
+    fieldset label{margin:0;font-weight:400;display:flex;gap:6px;align-items:center;padding:8px 14px;border:1px solid #cfcfc5;border-radius:99px;background:#fffefa;cursor:pointer}
+    fieldset label:has(input:checked){border-color:#252523;font-weight:500}
+    .row{display:flex;gap:8px;margin-top:14px}
     button{font:inherit;padding:9px 16px;border-radius:9px;border:0;cursor:pointer;background:#eeede5}
     button.primary{background:#f9d54a}#status{min-height:1.6em;margin-top:10px;font-size:13px}
   </style>
   <h1>Pixel Peeper settings</h1>
-  <p>Pixel Peeper measures styles on your device. AI design lessons use your own Anthropic API key.</p>
-  <h2>Anthropic API key</h2>
+  <p>Pixel Peeper measures styles on your device. AI design lessons use your own API key.</p>
   <form id="form">
-    <label for="key">API key</label>
-    <input id="key" type="password" autocomplete="off" spellcheck="false" placeholder="sk-ant-…" />
-    <div class="row"><button class="primary" type="submit">Save key</button><button type="button" id="remove">Remove key</button></div>
+    <h2>AI provider</h2>
+    <fieldset>${ids.map((id) => `<label><input type="radio" name="provider" value="${id}"> ${PROVIDERS[id].label}</label>`).join('')}</fieldset>
+    <label for="key" id="key-label">API key</label>
+    <input id="key" type="password" autocomplete="off" spellcheck="false" />
+    <label for="model">Model</label>
+    <input id="model" type="text" autocomplete="off" spellcheck="false" />
+    <p class="muted" id="model-hint"></p>
+    <div class="row"><button class="primary" type="submit">Save</button><button type="button" id="remove">Remove key</button></div>
     <p id="status" role="status"></p>
   </form>
-  <p class="muted">Create a key in the Anthropic Console. Usage is billed to your account.</p>
   <h2>What is sent when you analyze</h2>
   <ul>
     <li>A screenshot of the selection you chose (only the visible part).</li>
     <li>The measured style values and rule results shown in the lesson window.</li>
   </ul>
-  <p>Nothing is sent while you hover or select. The page URL is not included in the request. The key is stored in this browser profile's extension storage and sent only to api.anthropic.com.</p>`;
+  <p>Nothing is sent while you hover or select. The page URL is not included. Keys are stored in this browser profile's extension storage and sent only to the selected provider (<span id="host"></span>). Usage is billed to your account with that provider.</p>`;
 
-const input = document.getElementById('key') as HTMLInputElement;
+const form = document.getElementById('form') as HTMLFormElement;
+const keyInput = document.getElementById('key') as HTMLInputElement;
+const modelInput = document.getElementById('model') as HTMLInputElement;
 const statusEl = document.getElementById('status')!;
+let settings: Settings;
 
-async function refresh() {
-  const stored = (await chrome.storage.local.get(KEY))[KEY];
-  statusEl.textContent = typeof stored === 'string' && stored ? `Key saved, ending in …${stored.slice(-4)}.` : 'No key saved. Measurements and rule checks still work without one.';
+const current = () => (new FormData(form).get('provider') as Provider) ?? settings.provider;
+
+function render() {
+  const p = current(), info = PROVIDERS[p], saved = settings.keys[p];
+  document.getElementById('key-label')!.textContent = `${info.label} API key`;
+  keyInput.placeholder = saved ? `Saved, ending in …${saved.slice(-4)}. Paste a new key to replace it.` : `${info.keyPrefix}…`;
+  keyInput.value = '';
+  modelInput.value = settings.models[p] ?? '';
+  modelInput.placeholder = DEFAULT_MODELS[p];
+  document.getElementById('model-hint')!.textContent = `Leave blank for the default (${DEFAULT_MODELS[p]}). The model must accept images. Create keys at ${info.console}.`;
+  document.getElementById('host')!.textContent = info.host;
+  statusEl.textContent = saved ? `${info.label} key saved.${settings.provider === p ? ' This provider is active.' : ''}` : `No ${info.label} key saved. Measurements and rule checks still work without one.`;
 }
 
-document.getElementById('form')!.addEventListener('submit', async (e) => {
+form.addEventListener('change', (e) => { if ((e.target as HTMLInputElement).name === 'provider') render(); });
+form.addEventListener('submit', async (e) => {
   e.preventDefault();
-  const value = input.value.trim();
-  if (!value) { statusEl.textContent = 'Paste a key first.'; return; }
-  await chrome.storage.local.set({ [KEY]: value });
-  input.value = '';
-  await refresh();
-  if (!value.startsWith('sk-ant-')) statusEl.textContent += ' This does not look like an Anthropic key; check it if analysis fails.';
+  const p = current(), key = keyInput.value.trim();
+  if (!key && !settings.keys[p]) { statusEl.textContent = 'Paste a key first.'; return; }
+  settings = { provider: p, keys: { ...settings.keys, ...(key ? { [p]: key } : {}) }, models: { ...settings.models, [p]: modelInput.value.trim() || undefined } };
+  await saveSettings(settings);
+  render();
+  statusEl.textContent = `Saved. ${PROVIDERS[p].label} is now the active provider.`;
+  if (key && !key.startsWith(PROVIDERS[p].keyPrefix)) statusEl.textContent += ` This does not look like a ${PROVIDERS[p].label} key; check it if analysis fails.`;
 });
 document.getElementById('remove')!.addEventListener('click', async () => {
-  await chrome.storage.local.remove(KEY);
-  await refresh();
+  const p = current(), keys = { ...settings.keys };
+  delete keys[p];
+  settings = { ...settings, keys };
+  await saveSettings(settings);
+  render();
 });
-void refresh();
+
+void loadSettings().then((s) => {
+  settings = s;
+  (form.querySelector(`input[value="${s.provider}"]`) as HTMLInputElement).checked = true;
+  render();
+});
