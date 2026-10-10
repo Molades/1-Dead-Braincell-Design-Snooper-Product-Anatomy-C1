@@ -14,18 +14,83 @@ const FINGERPRINT_PROPS = [
 function fingerprint(cs: CSSStyleDeclaration): string {
   return FINGERPRINT_PROPS.map((p) => cs.getPropertyValue(p)).join('|');
 }
+const GENERIC_FONT_FAMILIES = new Set([
+  'serif', 'sans-serif', 'monospace', 'cursive', 'fantasy', 'system-ui',
+  'ui-serif', 'ui-sans-serif', 'ui-monospace', 'ui-rounded', 'math', 'emoji', 'fangsong',
+  '-apple-system', 'blinkmacsystemfont',
+]);
+
+function parseFontFamilyList(stack: string): string[] {
+  return stack.split(',').map((s) => s.trim().replace(/^['"]|['"]$/g, '')).filter(Boolean);
+}
+
+/**
+ * Resolves the declared CSS font-family stack down to the one family that's actually
+ * rendering, using the FontFaceSet API (`document.fonts.check`) where it's available (real
+ * browsers). Falls back to the first non-generic name in the stack when that API is missing
+ * (e.g. in a test environment), so the UI never shows the raw multi-font CSS stack as if it
+ * were a single resolved font.
+ */
+function resolveFontFamily(cs: CSSStyleDeclaration, doc: Document): string {
+  const stack = cs.fontFamily;
+  const candidates = parseFontFamilyList(stack);
+  const fonts = doc.fonts;
+  if (fonts && typeof fonts.check === 'function') {
+    const size = cs.fontSize && cs.fontSize !== '' ? cs.fontSize : '16px';
+    for (const name of candidates) {
+      if (GENERIC_FONT_FAMILIES.has(name.toLowerCase())) continue;
+      try {
+        if (fonts.check(`${size} "${name}"`)) return name;
+      } catch {
+        // Treat an unrecognized family as not loaded rather than failing the whole measurement.
+      }
+    }
+  }
+  return candidates.find((n) => !GENERIC_FONT_FAMILIES.has(n.toLowerCase())) ?? candidates[0] ?? stack;
+}
+
+const RASTER_TAGS = /^(img|picture|video|canvas)$/i;
+const REASON_IMAGE_BACKGROUND = 'Background is an image or gradient';
+
+/** True when `a` is at least half covered by `b` (viewport coordinates). */
+function overlapsVisibleArea(a: DOMRect, b: DOMRect): boolean {
+  if (a.width <= 0 || a.height <= 0) return false;
+  const w = Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left));
+  const h = Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top));
+  return (w * h) / (a.width * a.height) >= 0.5;
+}
+
+/**
+ * Finds a raster element (img/picture/video/canvas) that visually sits behind `el` — e.g. an
+ * absolutely-positioned photo with text overlaid on top of it. Computed styles can't see the
+ * pixel content of such an image, so contrast against it can't be measured, even though every
+ * ancestor's `background-color` may legitimately resolve to an opaque value.
+ */
+function rasterMediaBehind(el: Element): boolean {
+  const rect = el.getBoundingClientRect();
+  for (let n: Element | null = el.parentElement; n; n = n.parentElement) {
+    for (const child of n.children) {
+      if (child === el || child.contains(el) || !RASTER_TAGS.test(child.tagName)) continue;
+      if (overlapsVisibleArea(rect, child.getBoundingClientRect())) return true;
+    }
+    if (n === el.ownerDocument.body) break;
+  }
+  return false;
+}
 
 /**
  * Walk ancestors compositing backgrounds. Returns null (can't measure) if an image or gradient
- * is met before an opaque color is reached.
+ * is met before an opaque color is reached, including a raster element rendered behind `el`
+ * that CSS alone can't reveal.
  */
 export function effectiveBackground(el: Element): { color: RGBA | null; reason?: string } {
+  if (rasterMediaBehind(el)) return { color: null, reason: REASON_IMAGE_BACKGROUND };
   const layers: RGBA[] = [];
   const win = el.ownerDocument.defaultView!;
   for (let n: Element | null = el; n; n = n.parentElement) {
     const cs = win.getComputedStyle(n);
     if (cs.backgroundImage && cs.backgroundImage !== 'none') {
-      return { color: null, reason: 'Background is an image or gradient' };
+      return { color: null, reason: REASON_IMAGE_BACKGROUND };
     }
     const c = parseColor(cs.backgroundColor);
     if (c && c.a > 0) {
@@ -89,7 +154,7 @@ export function measureElement(el: Element): Facts {
     capturedAt: new Date().toISOString(),
     selector: cssPath(el),
     typography: {
-      fontFamily: F(cs.fontFamily),
+            fontFamily: F(resolveFontFamily(cs, doc)),
       fontSize: F(fontSize),
       fontWeight: F(fontWeight),
       lineHeight: F(cs.lineHeight === 'normal' || cs.lineHeight === '' ? null : px(cs.lineHeight)),
