@@ -92,7 +92,7 @@ export function measureElement(el: Element): Facts {
       fontFamily: F(cs.fontFamily),
       fontSize: F(fontSize),
       fontWeight: F(fontWeight),
-      lineHeight: F(cs.lineHeight === 'normal' ? null : px(cs.lineHeight)),
+      lineHeight: F(cs.lineHeight === 'normal' || cs.lineHeight === '' ? null : px(cs.lineHeight)),
       letterSpacing: F(px(cs.letterSpacing)),
       textAlign: F(cs.textAlign),
     },
@@ -137,7 +137,7 @@ export function measureElement(el: Element): Facts {
       componentType: F(componentType(el), 'derived'),
     },
     a11y: {
-      tapTarget: F({ width: rect.width, height: rect.height, meets44: rect.width >= 44 && rect.height >= 44 }, 'derived'),
+      tapTarget: F({ width: +rect.width.toFixed(2), height: +rect.height.toFixed(2) }, 'derived'),
       minTextSize: F(el.textContent?.trim() ? fontSize : null, 'derived'),
       accessibleName: F(accessibleName(el), 'derived'),
       altText: F(el.tagName === 'IMG' ? el.getAttribute('alt') : null, 'attribute'),

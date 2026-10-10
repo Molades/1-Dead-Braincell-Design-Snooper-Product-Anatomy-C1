@@ -83,7 +83,8 @@ export const Facts = z.object({
     componentType: fact(z.string().nullable()),
   }),
   a11y: z.object({
-    tapTarget: fact(z.object({ width: z.number(), height: z.number(), meets44: z.boolean() })),
+    // Raw size only; pass/fail against a criterion belongs to packages/rules.
+    tapTarget: fact(z.object({ width: z.number(), height: z.number() })),
     minTextSize: fact(z.number().nullable()),
     accessibleName: fact(z.string().nullable()),
     altText: fact(z.string().nullable()),
@@ -94,6 +95,38 @@ export const Facts = z.object({
   }),
 });
 export type Facts = z.infer<typeof Facts>;
+
+/**
+ * Outcome of one rule against one Facts snapshot.
+ * - pass / fail: a threshold rule that applied and could be measured (label: measured)
+ * - observed: a measured observation with no pass/fail, e.g. spacing grid (label: measured)
+ * - not-applicable: the rule's preconditions are not met
+ * - cannot-measure: it applies, but an input is unavailable; never guessed
+ * - needs-judgment: a judgment rule handed to the model (label: inferred)
+ */
+export const RuleStatus = z.enum(['pass', 'fail', 'observed', 'not-applicable', 'cannot-measure', 'needs-judgment']);
+export type RuleStatus = z.infer<typeof RuleStatus>;
+
+export const RuleConformance = z.enum(['wcag-a', 'wcag-aa', 'wcag-aaa', 'guideline', 'law', 'heuristic']);
+export type RuleConformance = z.infer<typeof RuleConformance>;
+
+export const RuleResult = z.object({
+  ruleId: z.string(),
+  ruleVersion: z.string(),
+  name: z.string(),
+  label: Label,
+  status: RuleStatus,
+  conformance: RuleConformance,
+  /** Human-readable criterion, e.g. "WCAG 2.2 SC 1.4.3 Contrast (Minimum)". */
+  criterion: z.string(),
+  message: z.string(),
+  evidence: z.array(z.string()),
+  actual: z.union([z.number(), z.string()]).optional(),
+  threshold: z.union([z.number(), z.string()]).optional(),
+  /** Exceptions the rule defines but the engine did not evaluate. */
+  unevaluatedExceptions: z.array(z.string()).optional(),
+});
+export type RuleResult = z.infer<typeof RuleResult>;
 
 /**
  * A single claim shown on an analysis card.

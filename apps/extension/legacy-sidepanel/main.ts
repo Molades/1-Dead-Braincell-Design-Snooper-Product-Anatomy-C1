@@ -45,7 +45,7 @@ function render(f: Facts) {
     section('Size', [row('W × H', `${f.size.width.value} × ${f.size.height.value}`)].join('')),
     section('Shape', [row('Radius', f.shape.borderRadius.value.join(' ')), row('Shadow', f.shape.boxShadow.value)].join('')),
     section('Structure', [row('Tag', f.structure.tag.value), row('Component', f.structure.componentType.value ?? '—')].join('')),
-    section('Accessibility', [row('Tap target', `${f.a11y.tapTarget.value.meets44 ? 'meets' : 'below'} 44px`)].join('')),
+    section('Accessibility', [row('Tap target', `${f.a11y.tapTarget.value.width} × ${f.a11y.tapTarget.value.height}px`)].join('')),
     section('Consistency', [row('Same style on page', `${f.consistency.sameStyleCount.value}×`)].join('')),
   ].join('');
 }
