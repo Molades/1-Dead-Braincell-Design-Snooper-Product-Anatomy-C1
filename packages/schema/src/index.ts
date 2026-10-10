@@ -139,20 +139,31 @@ export const Claim = z.object({
   label: Label,
   evidence: z.array(z.string()), // dotted fact paths, e.g. "typography.fontSize"
   ruleId: z.string().optional(),
+  /** Grounded only in the screenshot; no measured fact backs it. */
+  visualOnly: z.boolean().optional(),
 });
 export type Claim = z.infer<typeof Claim>;
 
+/**
+ * The interpretation layer. Every claim here is `inferred`; measured values live in Facts
+ * and RuleResult and are rendered from there, never from model text.
+ */
 export const Analysis = z.object({
   scope: z.enum(['element', 'page']),
-  role: Claim,
-  hierarchy: Claim,
-  emphasis: Claim,
+  lesson: Claim.nullable(),
+  role: Claim.nullable(),
+  emphasis: Claim.nullable(),
   whyItWorks: z.array(Claim),
+  limitations: z.array(Claim),
   tradeoffs: z.array(Claim),
   lawReadings: z.array(Claim),
-  vocabChips: z.array(z.string()),
+  visualOnly: z.array(Claim),
+  vocabulary: z.array(z.string()),
+  /** Model claims the validator removed, kept for transparency and evals. */
+  rejected: z.array(z.object({ text: z.string(), reason: z.string() })),
   modelInfo: z.object({ provider: z.string(), model: z.string() }),
   rulesLibraryVersion: z.string(),
+  createdAt: z.string(),
 });
 export type Analysis = z.infer<typeof Analysis>;
 

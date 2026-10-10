@@ -10,6 +10,7 @@
     "postinstall": "wxt prepare"
   },
   "dependencies": {
+    "@pixelpeeper/analysis": "*",
     "@pixelpeeper/measure": "*",
     "@pixelpeeper/rules": "*",
     "@pixelpeeper/schema": "*"

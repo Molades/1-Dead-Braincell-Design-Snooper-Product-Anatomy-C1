@@ -1,6 +1,6 @@
 # Pixel Peeper extension UI scaffold
 
-Run `npm run build:ext` from the repository root. In Chrome, open Extensions, enable Developer mode, choose Load unpacked, and select `apps/extension/.output/chrome-mv3`. Reload the webpage after installing. Click the extension action to reveal the corner mascot. Restricted browser/store pages cannot be inspected; a badge explains when activation fails.
+Run `npm run build:ext` from the repository root. In Chrome, open Extensions, enable Developer mode, choose Load unpacked, and select `apps/extension/dist/chrome-mv3`. Reload the webpage after installing. Click the extension action to reveal the corner mascot. Restricted browser/store pages cannot be inspected; a badge explains when activation fails.
 
 The UI lives in `components/overlay.ts` and `components/overlay.css`. A Shadow DOM isolates it from page styles; it never changes the webpage viewport. The content entrypoint manages activation and cleanup. The background action sends activation, replacing automatic side-panel opening. Legacy side-panel code is retained under `legacy-sidepanel` and excluded from the extension build.
 
