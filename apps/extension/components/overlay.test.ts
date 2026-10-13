@@ -28,6 +28,19 @@ describe('floating extension lifecycle', () => {
   it('saves measured facts only after analysis and does not duplicate saves',async()=>{
     document.elementFromPoint=()=>document.getElementById('subject');select();button('scan').click();await vi.advanceTimersByTimeAsync(1000);button('save').click();await Promise.resolve();expect(storageSet).toHaveBeenCalledTimes(1);const stored=Object.values(storageSet.mock.calls[0][0])[0] as {facts:{typography:{fontSize:{value:number}}}}[];expect(stored[0].facts.typography.fontSize.value).toBeTypeOf('number');button('save').click();await Promise.resolve();expect(storageSet).toHaveBeenCalledTimes(1);
   });
+  it('saves the capture thumbnail with the idea, under its own key',async()=>{
+    const thumb={base64:'AAAA',mediaType:'image/jpeg',width:10,height:8};
+    const analysis={version:2,scope:'element',headline:null,role:null,technique:null,works:[],watch:[],tradeoff:null,steal:[],laws:[],visualOnly:[],vocabulary:[],rejected:[],modelInfo:{provider:'groq',model:'m'},rulesLibraryVersion:'0.1.0',createdAt:'2026-10-13T00:00:00Z'};
+    (chrome.runtime as unknown as {sendMessage:unknown}).sendMessage=vi.fn(async(m:{type:string})=>m.type==='pp:status'?{hasKey:true}:m.type==='pp:capture'?{image:{base64:'BBBB',mediaType:'image/png'},thumb}:m.type==='pp:analyze'?{analysis}:undefined);
+    document.elementFromPoint=()=>document.getElementById('subject');select();button('scan').click();await vi.advanceTimersByTimeAsync(2000);
+    expect(root.querySelector('canvas[data-thumb="current"]')).not.toBeNull();
+    button('save').click();await vi.advanceTimersByTimeAsync(0);
+    const written=storageSet.mock.calls[0][0] as Record<string,unknown>;const shotKeyName=Object.keys(written).find(k=>k.startsWith('pixelpeeper.shot.'))!;
+    expect(written[shotKeyName]).toEqual(thumb);
+    const list=written['pixelpeeper.saved.v1'] as {shot?:string;analysis:unknown}[];
+    expect(list[0].shot).toBe(shotKeyName);
+    expect(list[0].analysis).toEqual(analysis);
+  });
   it('exports Markdown and CSS with actual line breaks',async()=>{
     document.elementFromPoint=()=>document.getElementById('subject');select();button('scan').click();await vi.advanceTimersByTimeAsync(1000);button('export').click();
     expect(root.querySelector('pre')!.textContent).toContain('# Design direction\n\n## Measured');

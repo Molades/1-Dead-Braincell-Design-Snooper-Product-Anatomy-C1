@@ -4,9 +4,12 @@ import { Facts } from '@pixelpeeper/schema';
 import { activeKey, activeModel, loadSettings, PROVIDERS } from '../components/settings';
 /** Long edge cap for the screenshot; larger images are downscaled before upload. */
 const MAX_EDGE = 1568;
+/** Long edge for the saved thumbnail shown in the lesson header and library. */
+const THUMB_EDGE = 640;
 
 type Rect = { x: number; y: number; width: number; height: number };
 type Image = { base64: string; mediaType: 'image/png' };
+type Thumb = { base64: string; mediaType: 'image/jpeg'; width: number; height: number };
 type Msg =
   | { type: 'pp:status' }
   | { type: 'pp:open-options' }
@@ -21,8 +24,8 @@ function toBase64(buffer: ArrayBuffer): string {
   return btoa(binary);
 }
 
-/** Capture the visible tab and crop to the selection's visible bounds. */
-async function capture(windowId: number, rect: Rect, dpr: number): Promise<Image> {
+/** Capture the visible tab and crop to the selection's visible bounds: full size for the model, a JPEG thumbnail for display. */
+async function capture(windowId: number, rect: Rect, dpr: number): Promise<{ image: Image; thumb: Thumb }> {
   const dataUrl = await chrome.tabs.captureVisibleTab(windowId, { format: 'png' });
   const bitmap = await createImageBitmap(await (await fetch(dataUrl)).blob());
   const sx = Math.max(0, Math.round(rect.x * dpr)), sy = Math.max(0, Math.round(rect.y * dpr));
@@ -32,7 +35,17 @@ async function capture(windowId: number, rect: Rect, dpr: number): Promise<Image
   const canvas = new OffscreenCanvas(Math.round(sw * scale), Math.round(sh * scale));
   canvas.getContext('2d')!.drawImage(bitmap, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
   const blob = await canvas.convertToBlob({ type: 'image/png' });
-  return { base64: toBase64(await blob.arrayBuffer()), mediaType: 'image/png' };
+  const t = Math.min(1, THUMB_EDGE / Math.max(sw, sh));
+  const small = new OffscreenCanvas(Math.max(1, Math.round(sw * t)), Math.max(1, Math.round(sh * t)));
+  const ctx = small.getContext('2d')!;
+  ctx.fillStyle = '#ffffff'; // JPEG has no alpha
+  ctx.fillRect(0, 0, small.width, small.height);
+  ctx.drawImage(bitmap, sx, sy, sw, sh, 0, 0, small.width, small.height);
+  const thumbBlob = await small.convertToBlob({ type: 'image/jpeg', quality: 0.82 });
+  return {
+    image: { base64: toBase64(await blob.arrayBuffer()), mediaType: 'image/png' },
+    thumb: { base64: toBase64(await thumbBlob.arrayBuffer()), mediaType: 'image/jpeg', width: small.width, height: small.height },
+  };
 }
 
 async function handle(msg: Msg, sender: chrome.runtime.MessageSender): Promise<unknown> {
@@ -44,7 +57,7 @@ async function handle(msg: Msg, sender: chrome.runtime.MessageSender): Promise<u
       return { ok: true };
     case 'pp:capture':
       if (!sender.tab?.windowId) return { error: 'No tab to capture.', code: 'capture' };
-      try { return { image: await capture(sender.tab.windowId, msg.rect, msg.dpr) }; }
+      try { return await capture(sender.tab.windowId, msg.rect, msg.dpr); }
       catch (err) { return { error: err instanceof Error ? err.message : String(err), code: 'capture' }; }
     case 'pp:analyze': {
       const settings = await loadSettings();
