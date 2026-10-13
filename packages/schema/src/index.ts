@@ -141,24 +141,39 @@ export const Claim = z.object({
   ruleId: z.string().optional(),
   /** Grounded only in the screenshot; no measured fact backs it. */
   visualOnly: z.boolean().optional(),
+  /** Short heading for the claim, e.g. "Repeats across plans". */
+  title: z.string().optional(),
+  /** Category from a fixed set: attention technique, or a law's stance (supports/strains/mixed). */
+  tag: z.string().optional(),
 });
 export type Claim = z.infer<typeof Claim>;
+
+export const Term = z.object({ term: z.string(), meaning: z.string() });
+export type Term = z.infer<typeof Term>;
 
 /**
  * The interpretation layer. Every claim here is `inferred`; measured values live in Facts
  * and RuleResult and are rendered from there, never from model text.
  */
 export const Analysis = z.object({
+  version: z.literal(2),
   scope: z.enum(['element', 'page']),
-  lesson: Claim.nullable(),
+  /** The one lesson to read first. */
+  headline: Claim.nullable(),
+  /** What it is; `title` is a 2-4 word label. */
   role: Claim.nullable(),
-  emphasis: Claim.nullable(),
-  whyItWorks: z.array(Claim),
-  limitations: z.array(Claim),
-  tradeoffs: z.array(Claim),
-  lawReadings: z.array(Claim),
+  /** How it gains attention; `tag` is the technique. */
+  technique: Claim.nullable(),
+  works: z.array(Claim),
+  watch: z.array(Claim),
+  /** `title` reads "X over Y". */
+  tradeoff: Claim.nullable(),
+  /** Reusable takeaways, written as instructions. */
+  steal: z.array(Claim),
+  /** Judgment-rule readings; `ruleId` and `tag` (stance) set. */
+  laws: z.array(Claim),
   visualOnly: z.array(Claim),
-  vocabulary: z.array(z.string()),
+  vocabulary: z.array(Term),
   /** Model claims the validator removed, kept for transparency and evals. */
   rejected: z.array(z.object({ text: z.string(), reason: z.string() })),
   modelInfo: z.object({ provider: z.string(), model: z.string() }),
@@ -166,6 +181,39 @@ export const Analysis = z.object({
   createdAt: z.string(),
 });
 export type Analysis = z.infer<typeof Analysis>;
+
+/**
+ * Accept an analysis saved by any release. Version 1 (paragraph sections) is mapped onto the
+ * version 2 slots so older saved ideas still open. Returns null for anything unrecognised.
+ */
+export function normalizeAnalysis(input: unknown): Analysis | null {
+  if (!input || typeof input !== 'object') return null;
+  const a = input as Record<string, unknown>;
+  if (a.version === 2) { const parsed = Analysis.safeParse(a); return parsed.success ? parsed.data : null; }
+  if (!a.modelInfo || !('lesson' in a)) return null; // not a v1 analysis either
+  const list = (v: unknown) => (Array.isArray(v) ? (v as Claim[]) : []);
+  const one = (v: unknown) => (v && typeof v === 'object' ? (v as Claim) : null);
+  const legacy = {
+    version: 2 as const,
+    scope: a.scope === 'page' ? 'page' as const : 'element' as const,
+    headline: one(a.lesson),
+    role: one(a.role),
+    technique: one(a.emphasis),
+    works: list(a.whyItWorks),
+    watch: list(a.limitations),
+    tradeoff: list(a.tradeoffs)[0] ?? null,
+    steal: [],
+    laws: list(a.lawReadings),
+    visualOnly: list(a.visualOnly),
+    vocabulary: (Array.isArray(a.vocabulary) ? a.vocabulary : []).map((v) => (typeof v === 'string' ? { term: v, meaning: '' } : v)),
+    rejected: list(a.rejected) as unknown as Analysis['rejected'],
+    modelInfo: (a.modelInfo as Analysis['modelInfo']) ?? { provider: 'unknown', model: 'unknown' },
+    rulesLibraryVersion: String(a.rulesLibraryVersion ?? 'unknown'),
+    createdAt: String(a.createdAt ?? new Date(0).toISOString()),
+  };
+  const parsed = Analysis.safeParse(legacy);
+  return parsed.success ? parsed.data : null;
+}
 
 /** Resolve a dotted path like "typography.fontSize" against a Facts object. */
 export function getFact(facts: Facts, path: string): unknown {

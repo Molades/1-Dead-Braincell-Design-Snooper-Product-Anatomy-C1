@@ -43,8 +43,9 @@ async function handle(msg: Msg, sender: chrome.runtime.MessageSender): Promise<u
       await chrome.runtime.openOptionsPage();
       return { ok: true };
     case 'pp:capture':
-      if (!sender.tab?.windowId) return { error: 'No tab to capture.' };
-      return { image: await capture(sender.tab.windowId, msg.rect, msg.dpr) };
+      if (!sender.tab?.windowId) return { error: 'No tab to capture.', code: 'capture' };
+      try { return { image: await capture(sender.tab.windowId, msg.rect, msg.dpr) }; }
+      catch (err) { return { error: err instanceof Error ? err.message : String(err), code: 'capture' }; }
     case 'pp:analyze': {
       const settings = await loadSettings();
       const key = activeKey(settings);
@@ -74,7 +75,11 @@ export default defineBackground(() => {
   chrome.runtime.onMessage.addListener((msg: Msg, sender, sendResponse) => {
     if (!msg?.type?.startsWith('pp:') || msg.type === ('pp:activate' as string)) return false;
     handle(msg, sender).then(sendResponse, (err: unknown) =>
-      sendResponse({ error: err instanceof Error ? err.message : String(err), code: err instanceof AnalysisError ? err.code : undefined }),
+      sendResponse({
+        error: err instanceof Error ? err.message : String(err),
+        code: err instanceof AnalysisError ? err.code : undefined,
+        retryAfter: err instanceof AnalysisError ? err.retryAfter : undefined,
+      }),
     );
     return true; // async response
   });

@@ -83,7 +83,7 @@ export async function analyzeWithGroq(opts: GroqOptions): Promise<Analysis> {
   if (res.status === 401 || res.status === 403) throw new AnalysisError('invalid-key', 'Groq rejected the API key. Check it in Pixel Peeper settings.');
   if (res.status === 429) {
     const wait = retryAfter(res);
-    throw new AnalysisError('rate-limited', `Groq's rate limit was reached (tokens per minute on your plan). ${wait !== null ? `Try again in about ${Math.ceil(wait)} seconds.` : 'Wait a minute and try again.'} Retry reuses the same screenshot.`);
+    throw new AnalysisError('rate-limited', `Groq's per-minute token limit for your plan was reached. ${wait !== null ? `Try again in about ${Math.ceil(wait)} seconds.` : 'Wait a minute and try again.'} Retry reuses the same screenshot.`, wait ?? 60);
   }
   if (!res.ok) throw new AnalysisError('api', `Groq error ${res.status}: ${body.error?.message ?? res.statusText}`);
   const choice = body.choices?.[0];

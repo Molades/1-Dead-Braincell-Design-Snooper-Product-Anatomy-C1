@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { measureElement } from '@pixelpeeper/measure';
 import { evaluate } from '@pixelpeeper/rules';
-import { Analysis, type Facts } from '@pixelpeeper/schema';
+import { Analysis, normalizeAnalysis, type Facts } from '@pixelpeeper/schema';
 import { analyze, AnalysisError, buildUserContent, factPaths, numbersInText, SYSTEM_PROMPT, validate, type ModelOutput } from './index';
 
 function setup() {
@@ -13,56 +13,74 @@ function setup() {
 }
 
 const base = (over: Partial<ModelOutput> = {}): ModelOutput => ({
-  lesson: { text: 'Dark fill on a light page likely makes this the primary action.', evidence: ['color.background', 'color.contrast'] },
-  role: { text: 'Likely the primary call-to-action.', evidence: ['structure.tag'] },
-  emphasis: { text: 'Emphasis comes from inverted contrast.', evidence: ['rule:wcag-1.4.3-contrast-minimum'] },
-  whyItWorks: [{ text: 'The 48px height gives a comfortable target.', evidence: ['size.height'] }],
-  limitations: [],
-  tradeoffs: [],
-  lawReadings: [{ ruleId: 'law-fitts', text: 'A large target is quick to reach.', evidence: ['a11y.tapTarget'] }],
+  headline: { text: 'Dark fill on a light page likely makes this the primary action.', evidence: ['color.background', 'color.contrast'] },
+  role: { label: 'Primary call-to-action', detail: 'Likely the main action on the page.', evidence: ['structure.tag'] },
+  technique: { label: 'contrast', detail: 'Emphasis comes from inverted contrast.', evidence: ['rule:wcag-1.4.3-contrast-minimum'] },
+  works: [{ title: 'Comfortable target', detail: 'The 48px height gives a comfortable target.', evidence: ['size.height'] }],
+  watch: [],
+  tradeoff: { leansToward: 'focus', over: 'variety', detail: 'One strong action, little else competing.', evidence: ['color.contrast'] },
+  steal: [{ text: 'Give the main action the only dark fill in its region.', evidence: ['color.background'] }],
+  laws: [{ ruleId: 'law-fitts', stance: 'supports', detail: 'A large target is quick to reach.', evidence: ['a11y.tapTarget'] }],
   visualOnly: [{ text: 'Sits beside a secondary ghost button.' }],
-  vocabulary: ['contrast emphasis', 'primary action', 'contrast emphasis'],
+  vocabulary: [{ term: 'contrast emphasis', meaning: 'Standing out by differing in lightness.' }, { term: 'Contrast emphasis', meaning: 'dup' }, { term: 'primary action', meaning: 'The main thing to do.' }],
   ...over,
 });
 
 describe('trust boundary', () => {
-  it('produces a schema-valid analysis where every claim is inferred', () => {
+  it('produces a schema-valid v2 analysis where every claim is inferred', () => {
     const { ctx } = setup();
     const a = validate(base(), ctx);
     expect(() => Analysis.parse(a)).not.toThrow();
-    const claims = [a.lesson, a.role, a.emphasis, ...a.whyItWorks, ...a.lawReadings, ...a.visualOnly].filter(Boolean);
-    expect(claims.length).toBe(6);
+    const claims = [a.headline, a.role, a.technique, a.tradeoff, ...a.works, ...a.steal, ...a.laws, ...a.visualOnly].filter(Boolean);
+    expect(claims.length).toBe(8);
     expect(claims.every((c) => c!.label === 'inferred')).toBe(true);
-    expect(a.vocabulary).toEqual(['contrast emphasis', 'primary action']);
+    expect(a.role!.title).toBe('Primary call-to-action');
+    expect(a.technique!.tag).toBe('contrast');
+    expect(a.tradeoff!.title).toBe('focus over variety');
+    expect(a.laws[0]!.tag).toBe('supports');
+    expect(a.vocabulary.map((v) => v.term)).toEqual(['contrast emphasis', 'primary action']);
     expect(a.rejected).toEqual([]);
   });
 
-  it('rejects claims that state numbers not in the measurements', () => {
+  it('rejects claims that state numbers not in the measurements, including in titles', () => {
     const { ctx } = setup();
-    const a = validate(base({ whyItWorks: [{ text: 'The 52px height is generous.', evidence: ['size.height'] }, { text: 'Contrast is 21:1.', evidence: ['color.contrast'] }] }), ctx);
-    expect(a.whyItWorks).toHaveLength(0);
+    const a = validate(base({ works: [
+      { title: 'Generous height', detail: 'The 52px height is generous.', evidence: ['size.height'] },
+      { title: 'Huge 99px target', detail: 'Easy to hit.', evidence: ['size.height'] },
+      { title: 'High contrast', detail: 'Contrast is 21:1.', evidence: ['color.contrast'] },
+    ] }), ctx);
+    expect(a.works).toHaveLength(0);
     expect(a.rejected.map((r) => r.reason).join()).toMatch(/52/);
+    expect(a.rejected.map((r) => r.reason).join()).toMatch(/99/);
   });
 
   it('accepts numbers that are measured or are rule thresholds', () => {
     const { ctx } = setup();
-    const a = validate(base({ whyItWorks: [{ text: 'At 16px with 24px leading it clears the 4.5:1 minimum.', evidence: ['typography.fontSize'] }] }), ctx);
-    expect(a.whyItWorks).toHaveLength(1);
+    const a = validate(base({ works: [{ title: 'Readable', detail: 'At 16px with 24px leading it clears the 4.5:1 minimum.', evidence: ['typography.fontSize'] }] }), ctx);
+    expect(a.works).toHaveLength(1);
   });
 
   it('drops unknown evidence paths and rejects claims left with none', () => {
     const { ctx } = setup();
-    const a = validate(base({ role: { text: 'Likely primary.', evidence: ['vibes.score', 'structure.tag'] }, emphasis: { text: 'Pops.', evidence: ['made.up'] } }), ctx);
+    const a = validate(base({ role: { label: 'CTA', detail: 'Likely primary.', evidence: ['vibes.score', 'structure.tag'] }, technique: { label: 'size', detail: 'Pops.', evidence: ['made.up'] } }), ctx);
     expect(a.role!.evidence).toEqual(['structure.tag']);
-    expect(a.emphasis).toBeNull();
+    expect(a.technique).toBeNull();
     expect(a.rejected.some((r) => r.reason === 'Cites no measured evidence')).toBe(true);
   });
 
-  it('only accepts law readings for queued judgment rules', () => {
+  it('only accepts law readings for queued judgment rules, max 4', () => {
     const { ctx } = setup();
-    const a = validate(base({ lawReadings: [{ ruleId: 'nielsen-1', text: 'Status is visible.', evidence: ['structure.tag'] }, { ruleId: 'law-made-up', text: 'x', evidence: ['structure.tag'] }] }), ctx);
-    expect(a.lawReadings).toHaveLength(0); // nielsen is page scope only; law-made-up does not exist
+    const a = validate(base({ laws: [{ ruleId: 'nielsen-1', stance: 'supports', detail: 'Status is visible.', evidence: ['structure.tag'] }, { ruleId: 'law-made-up', stance: 'mixed', detail: 'x', evidence: ['structure.tag'] }] }), ctx);
+    expect(a.laws).toHaveLength(0); // nielsen is page scope only; law-made-up does not exist
     expect(a.rejected).toHaveLength(2);
+  });
+
+  it('caps list lengths so the lesson stays scannable', () => {
+    const { ctx } = setup();
+    const p = { title: 'Point', detail: 'Something useful.', evidence: ['structure.tag'] };
+    const a = validate(base({ works: [p, p, p, p, p], steal: [1, 2, 3].map(() => ({ text: 'Do this.', evidence: ['structure.tag'] })) }), ctx);
+    expect(a.works).toHaveLength(3);
+    expect(a.steal).toHaveLength(2);
   });
 
   it('keeps visual-only claims without evidence but still bans numbers there', () => {
@@ -70,6 +88,15 @@ describe('trust boundary', () => {
     const a = validate(base({ visualOnly: [{ text: 'A photo sits behind it.' }, { text: 'About 30px from the logo.' }] }), ctx);
     expect(a.visualOnly).toHaveLength(1);
     expect(a.visualOnly[0]!.visualOnly).toBe(true);
+  });
+
+  it('opens analyses saved in the old paragraph format', () => {
+    const legacy = { scope: 'element', lesson: { id: 'c1', text: 'Old lesson', label: 'inferred', evidence: ['color.contrast'] }, role: null, emphasis: null, whyItWorks: [], limitations: [], tradeoffs: [], lawReadings: [], visualOnly: [], vocabulary: ['old term'], rejected: [], modelInfo: { provider: 'anthropic', model: 'm' }, rulesLibraryVersion: '0.1.0', createdAt: '2026-01-01T00:00:00Z' };
+    const a = normalizeAnalysis(legacy)!;
+    expect(a.version).toBe(2);
+    expect(a.headline!.text).toBe('Old lesson');
+    expect(a.vocabulary).toEqual([{ term: 'old term', meaning: '' }]);
+    expect(normalizeAnalysis({ nonsense: true })).toBeNull();
   });
 });
 
@@ -109,7 +136,7 @@ describe('analyze', () => {
 
   it('validates parsed output into an Analysis', async () => {
     const a = await analyze({ ...opts(), client: fakeClient({ stop_reason: 'end_turn', model: 'claude-opus-5-5', parsed_output: base() }) });
-    expect(a.lesson?.label).toBe('inferred');
+    expect(a.headline?.label).toBe('inferred');
     expect(a.modelInfo.model).toBe('claude-opus-5-5');
   });
   it('surfaces refusals and truncation as typed errors', async () => {

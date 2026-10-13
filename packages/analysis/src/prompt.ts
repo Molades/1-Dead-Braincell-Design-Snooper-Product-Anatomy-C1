@@ -23,7 +23,10 @@ Rules for every claim:
 - Do not invent attention scores, conversion effects, or user research.
 - Fitts's law does not imply a universal pixel threshold. Do not present 44px as a WCAG AA requirement.
 - If something is visible only in the screenshot, put it in visualOnly, with no numbers.
-- Write for a designer who is learning: plain, specific, short sentences.${library ? `
+- Write for a designer who is learning: plain, specific, short sentences. Fill the slots; do not write paragraphs.
+- Titles and labels name the idea, not the number: "Generous padding", not "24px padding".
+- "steal" items are instructions the learner can reuse anywhere: "Give the primary action the only dark fill in its region."
+- Only include laws that clearly apply; fewer, sharper readings beat many vague ones.${library ? `
 
 Judgment rules library (version ${RULES_VERSION}):
 ${JUDGMENT_RULES.map((r) => `- ${r.id} — ${r.name}: ${r.summary}`).join('\n')}` : ''}`;

@@ -67,33 +67,43 @@ export function validate(output: ModelOutput, ctx: ValidateContext): Analysis {
   const toClaim = (text: string, evidence: string[], extra: Partial<Claim> = {}): Claim | null => {
     const clean = text.trim();
     if (!clean) return null;
-    const bad = numbersInText(clean).filter((x) => !matches(x, nums));
-    if (bad.length) { rejected.push({ text: clean, reason: `States unmeasured number(s): ${bad.join(', ')}` }); return null; }
+    const checked = `${extra.title ?? ''} ${clean}`;
+    const bad = numbersInText(checked).filter((x) => !matches(x, nums));
+    if (bad.length) { rejected.push({ text: checked.trim(), reason: `States unmeasured number(s): ${bad.join(', ')}` }); return null; }
     const valid = [...new Set(evidence.filter((e) => paths.has(e) || ruleIds.has(e)))];
-    if (!valid.length && !extra.visualOnly) { rejected.push({ text: clean, reason: 'Cites no measured evidence' }); return null; }
+    if (!valid.length && !extra.visualOnly) { rejected.push({ text: checked.trim(), reason: 'Cites no measured evidence' }); return null; }
     return { id: `c${++n}`, text: clean, label: 'inferred', evidence: valid, ...extra };
   };
-  const many = (items: { text: string; evidence: string[] }[]) =>
-    items.map((c) => toClaim(c.text, c.evidence)).filter((c): c is Claim => c !== null);
+  const keep = (c: Claim | null): c is Claim => c !== null;
+  const points = (items: { title: string; detail: string; evidence: string[] }[], max: number) =>
+    items.slice(0, max).map((p) => toClaim(p.detail, p.evidence, { title: p.title.trim() })).filter(keep);
 
-  const lawReadings = output.lawReadings
+  const laws = output.laws
+    .slice(0, 4)
     .map((l) => {
-      if (!queued.has(l.ruleId)) { rejected.push({ text: l.text, reason: `Unknown or unqueued rule: ${l.ruleId}` }); return null; }
-      return toClaim(l.text, l.evidence, { ruleId: l.ruleId });
+      if (!queued.has(l.ruleId)) { rejected.push({ text: l.detail, reason: `Unknown or unqueued rule: ${l.ruleId}` }); return null; }
+      return toClaim(l.detail, l.evidence, { ruleId: l.ruleId, tag: l.stance });
     })
-    .filter((c): c is Claim => c !== null);
+    .filter(keep);
 
+  const t = output.tradeoff;
+  const seen = new Set<string>();
   return {
+    version: 2,
     scope: ctx.scope,
-    lesson: toClaim(output.lesson.text, output.lesson.evidence),
-    role: toClaim(output.role.text, output.role.evidence),
-    emphasis: toClaim(output.emphasis.text, output.emphasis.evidence),
-    whyItWorks: many(output.whyItWorks),
-    limitations: many(output.limitations),
-    tradeoffs: many(output.tradeoffs),
-    lawReadings,
-    visualOnly: output.visualOnly.map((v) => toClaim(v.text, [], { visualOnly: true })).filter((c): c is Claim => c !== null),
-    vocabulary: [...new Set(output.vocabulary.map((v) => v.trim()).filter(Boolean))].slice(0, 8),
+    headline: toClaim(output.headline.text, output.headline.evidence),
+    role: toClaim(output.role.detail, output.role.evidence, { title: output.role.label.trim() }),
+    technique: toClaim(output.technique.detail, output.technique.evidence, { tag: output.technique.label }),
+    works: points(output.works, 3),
+    watch: points(output.watch, 3),
+    tradeoff: t ? toClaim(t.detail, t.evidence, { title: `${t.leansToward.trim()} over ${t.over.trim()}` }) : null,
+    steal: output.steal.slice(0, 2).map((s) => toClaim(s.text, s.evidence)).filter(keep),
+    laws,
+    visualOnly: output.visualOnly.slice(0, 2).map((v) => toClaim(v.text, [], { visualOnly: true })).filter(keep),
+    vocabulary: output.vocabulary
+      .map((v) => ({ term: v.term.trim(), meaning: v.meaning.trim() }))
+      .filter((v) => v.term && !seen.has(v.term.toLowerCase()) && seen.add(v.term.toLowerCase()))
+      .slice(0, 5),
     rejected,
     modelInfo: { provider: ctx.provider ?? 'anthropic', model: ctx.model },
     rulesLibraryVersion: ctx.rulesVersion,

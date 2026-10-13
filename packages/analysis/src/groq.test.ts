@@ -9,10 +9,10 @@ function input() {
   return { facts, results: evaluate(facts), scope: 'element' as const, apiKey: 'gsk_test', provider: 'groq' as const, image: { base64: 'AAAA', mediaType: 'image/png' as const } };
 }
 const output: ModelOutput = {
-  lesson: { text: 'Dark fill likely marks the main action.', evidence: ['color.background'] },
-  role: { text: 'Likely a call-to-action.', evidence: ['structure.tag'] },
-  emphasis: { text: 'Inverted contrast.', evidence: ['color.contrast'] },
-  whyItWorks: [], limitations: [], tradeoffs: [], lawReadings: [], visualOnly: [], vocabulary: ['primary action'],
+  headline: { text: 'Dark fill likely marks the main action.', evidence: ['color.background'] },
+  role: { label: 'Call-to-action', detail: 'Likely the main action.', evidence: ['structure.tag'] },
+  technique: { label: 'contrast', detail: 'Inverted contrast.', evidence: ['color.contrast'] },
+  works: [], watch: [], tradeoff: null, steal: [], laws: [], visualOnly: [], vocabulary: [{ term: 'primary action', meaning: 'The main thing to do.' }],
 };
 const reply = (status: number, body: unknown) => vi.fn().mockResolvedValue(new Response(JSON.stringify(body), { status }));
 
@@ -28,14 +28,14 @@ describe('groq provider', () => {
     expect(body.response_format.json_schema.strict).toBe(true);
     expect(body.messages[1].content[1].image_url.url).toBe('data:image/png;base64,AAAA');
     expect(a.modelInfo).toEqual({ provider: 'groq', model: 'qwen/qwen3.8-27b' });
-    expect(a.lesson?.label).toBe('inferred');
+    expect(a.headline?.label).toBe('inferred');
   });
 
   it('applies the same trust boundary', async () => {
-    const bad = { ...output, whyItWorks: [{ text: 'The 99px height is huge.', evidence: ['size.height'] }] };
+    const bad = { ...output, works: [{ title: 'Big', detail: 'The 99px height is huge.', evidence: ['size.height'] }] };
     const fetch = reply(200, { choices: [{ finish_reason: 'stop', message: { content: JSON.stringify(bad) } }] });
     const a = await analyze({ ...input(), fetch } as never);
-    expect(a.whyItWorks).toHaveLength(0);
+    expect(a.works).toHaveLength(0);
     expect(a.rejected[0]!.reason).toMatch(/99/);
   });
 
