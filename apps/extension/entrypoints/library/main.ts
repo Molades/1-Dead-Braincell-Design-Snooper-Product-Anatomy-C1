@@ -1,6 +1,8 @@
-import { normalizeAnalysis, type CaptureRecord } from '@pixelpeeper/schema';
+import { Insight, normalizeAnalysis, type CaptureRecord } from '@pixelpeeper/schema';
 import { Store, type CaptureImages } from '@pixelpeeper/store';
-import { exportText, FILE_NAMES, GROUPS, type Format, type Group, type Sources } from '../../components/direction';
+import { buildDirection, CATEGORIES, directionSummary, exportText, FILE_NAMES, type Category, type Choices, type ExportExtras, type Format } from '../../components/direction';
+import type { LessonError } from '../../components/lesson';
+import { activeKey, loadSettings } from '../../components/settings';
 import type { Tab } from '../../components/lesson';
 import { compareView, homeView, ideaView, MAX_COMPARE, type Filter, type Thumbs } from '../../components/library-view';
 import { DEFAULT_LAYERS, viewerHTML, wireViewer, type Layer } from '../../components/viewer';
@@ -23,7 +25,28 @@ let filter: Filter = 'all';
 let query = '';
 let selected: string[] = [];
 let tab: Tab = 'lesson';
-let sources: Sources = {};
+/**
+ * The open comparison: choices, AI read-across and rationale, saved per set of ideas so
+ * reopening it costs no tokens. Keyed by the sorted capture ids.
+ */
+interface CompareSaved { choices: Choices; readAcross: Insight | null; rationale: { text: string; source: 'inferred' | 'user' } | null }
+let cmpKey = '';
+let cmp: CompareSaved = { choices: {}, readAcross: null, rationale: null };
+let busy: 'readAcross' | 'rationale' | null = null;
+let cmpError: (LessonError & { mode: 'readAcross' | 'rationale' }) | null = null;
+let hasKey = false;
+const keyFor = (ids: string[]) => `direction:${[...ids].sort().join(',')}`;
+async function loadCompare(ids: string[]) {
+  const key = keyFor(ids);
+  if (key === cmpKey) return;
+  cmpKey = key; busy = null; cmpError = null;
+  const saved = await store.getMeta<CompareSaved>(key);
+  const readAcross = Insight.safeParse(saved?.readAcross);
+  cmp = { choices: saved?.choices ?? {}, readAcross: readAcross.success ? readAcross.data : null, rationale: saved?.rationale ?? null };
+  hasKey = !!activeKey(await loadSettings());
+}
+const saveCompare = () => store.setMeta(cmpKey, cmp);
+const extras = (): ExportExtras => ({ readAcross: cmp.readAcross, rationale: cmp.rationale });
 let format: Format = 'md';
 let toastTimer: ReturnType<typeof setTimeout> | undefined;
 let viewerLayers: Layer[] = [...DEFAULT_LAYERS];
@@ -75,7 +98,8 @@ async function render(): Promise<void> {
     const items = r.ids.map((id) => records.find((x) => x.id === id)).filter((x): x is CaptureRecord => !!x);
     if (items.length < 2) { location.hash = '#/'; return; }
     document.title = 'Compare — Pixel Peeper Library';
-    app.innerHTML = compareView({ items, thumbs, sources, format });
+    await loadCompare(r.ids);
+    app.innerHTML = compareView({ items, thumbs, choices: cmp.choices, format, readAcross: cmp.readAcross, rationale: cmp.rationale, busy, error: cmpError, hasKey });
     return;
   }
   document.title = 'Pixel Peeper Library';
@@ -158,6 +182,32 @@ async function downloadAnnotated(host: HTMLElement, name: string): Promise<void>
 }
 
 // ---------------------------------------------------------------------------------------------
+// Compare: AI read-across and rationale (requests go through the background, which holds the key)
+
+async function interpretComparison(mode: 'readAcross' | 'rationale') {
+  const r = route();
+  if (r.name !== 'compare' || busy) return;
+  const items = compareItems();
+  const d = buildDirection(items, cmp.choices);
+  busy = mode; cmpError = null;
+  await render();
+  const res = await chrome.runtime.sendMessage({
+    type: 'pp:compare', ids: r.ids, mode,
+    ...(mode === 'rationale' ? { direction: directionSummary(d), extraNumbers: d.contrast?.ratio !== undefined ? [d.contrast.ratio] : [] } : {}),
+  }).catch(() => undefined) as { insight?: unknown; error?: string; code?: string; retryAfter?: number } | undefined;
+  busy = null;
+  const insight = Insight.safeParse(res?.insight);
+  if (insight.success) {
+    if (mode === 'readAcross') cmp.readAcross = insight.data;
+    else cmp.rationale = { text: insight.data.claims.map((c) => (c.title ? `${c.title}: ${c.text}` : c.text)).join('\n\n'), source: 'inferred' };
+    await saveCompare();
+  } else {
+    cmpError = { mode, code: res?.code, message: res?.error ?? 'The request did not complete. Try again.', retryAt: res?.retryAfter ? Date.now() + res.retryAfter * 1000 : undefined };
+  }
+  await render();
+}
+
+// ---------------------------------------------------------------------------------------------
 // Actions
 
 async function keep(id: string) {
@@ -218,10 +268,12 @@ document.addEventListener('click', (e) => {
     case 'settings': void chrome.runtime.openOptionsPage(); break;
     case 'clear-search': query = ''; filter = 'all'; void render(); break;
     case 'clear-select': selected = []; void render(); break;
-    case 'compare': if (selected.length >= 2) { sources = {}; location.hash = `#/compare/${selected.map(encodeURIComponent).join(',')}`; } break;
+    case 'compare': if (selected.length >= 2) location.hash = `#/compare/${selected.map(encodeURIComponent).join(',')}`; break;
+    case 'explain': void interpretComparison('readAcross'); break;
+    case 'draft': void interpretComparison('rationale'); break;
     case 'undo': { const undo = pendingUndo; pendingUndo = null; toastEl.hidden = true; void undo?.(); break; }
-    case 'copy': void navigator.clipboard.writeText(exportText(compareItems(), sources, format)).then(() => toast('Copied.')); break;
-    case 'download': download(exportText(compareItems(), sources, format), FILE_NAMES[format]); break;
+    case 'copy': void navigator.clipboard.writeText(exportText(compareItems(), cmp.choices, format, extras())).then(() => toast('Copied.')); break;
+    case 'download': download(exportText(compareItems(), cmp.choices, format, extras()), FILE_NAMES[format]); break;
   }
 });
 
@@ -231,9 +283,9 @@ document.addEventListener('change', (e) => {
     const id = input.dataset.select;
     selected = input.checked ? [...selected, id].slice(0, MAX_COMPARE) : selected.filter((x) => x !== id);
     void render();
-  } else if (input.type === 'radio' && (GROUPS as readonly string[]).includes(input.name)) {
-    sources = { ...sources, [input.name as Group]: Number(input.value) };
-    void render();
+  } else if (input.type === 'radio' && (CATEGORIES as readonly string[]).includes(input.name)) {
+    cmp.choices = { ...cmp.choices, [input.name as Category]: input.value === 'omit' ? 'omit' : Number(input.value) };
+    void saveCompare().then(render);
   } else if (input.dataset.title !== undefined) {
     const r = route();
     if (r.name === 'idea' && input.value.trim()) void store.update(r.id, { title: input.value }).then(refresh).then(() => toast('Title saved.'));
@@ -244,6 +296,17 @@ let noteTimer: ReturnType<typeof setTimeout> | undefined;
 document.addEventListener('input', (e) => {
   const el = e.target as HTMLElement;
   if (el.classList.contains('search')) { query = (el as HTMLInputElement).value; void render(); return; }
+  if (el.dataset.rationale !== undefined) {
+    // Editing turns an AI draft into the user's own text. No re-render, so typing keeps focus.
+    const first = cmp.rationale?.source !== 'user';
+    cmp.rationale = { text: (el as HTMLTextAreaElement).value, source: 'user' };
+    if (first) { const badge = app.querySelector('.rationale-head .badge'); if (badge) { badge.className = 'badge user'; badge.textContent = 'User authored'; } }
+    const pre = app.querySelector('.compare pre');
+    if (pre) pre.textContent = exportText(compareItems(), cmp.choices, format, extras());
+    clearTimeout(noteTimer);
+    noteTimer = setTimeout(() => { void saveCompare(); }, 500);
+    return;
+  }
   if (el.dataset.note !== undefined) {
     const r = route();
     if (r.name !== 'idea') return;

@@ -73,11 +73,25 @@ describe('compare', () => {
     expect(size.differs).toBe(true);
     expect(rows.find((r) => r.label === 'Font')!.differs).toBe(false);
   });
-  it('renders columns, the diff table, borrow choices and the export', () => {
-    const html = compareView({ items: [button('a'), tiny('b')], thumbs: {}, sources: { Color: 1 }, format: 'css' });
+  it('renders columns, the diff table, borrow options with values, recomputed contrast and the export', () => {
+    const base = { thumbs: {}, format: 'css' as const, readAcross: null, rationale: null, busy: null, error: null, hasKey: true };
+    const html = compareView({ ...base, items: [button('a'), tiny('b')], choices: { textColor: 1, background: 0 } });
     expect(html).toContain('Compare 2 ideas');
     expect(html).toContain('class="differs"');
-    expect(html).toMatch(/name="Color" value="1" checked/);
+    expect(html).toMatch(/name="textColor" value="1" checked/);
+    expect(html).toContain('Leave out');
+    expect(html).toContain('New pairing');
+    expect(html).toContain('recomputed for this combination');
+    expect(html).toContain('Explain the differences');
     expect(html).toContain(':root {');
+  });
+  it('shows a saved read-across with letter-tagged evidence, and a user-authored rationale', () => {
+    const items = [button('a'), tiny('b')];
+    const readAcross = { kind: 'readAcross' as const, claims: [{ id: 'k1', title: 'Size gap', text: 'A is larger than B.', label: 'inferred' as const, evidence: ['A:typography.fontSize', 'B:typography.fontSize'] }], bestFor: [], rejected: [], modelInfo: { provider: 'groq', model: 'm' }, createdAt: '2026-10-13T00:00:00Z' };
+    const html = compareView({ items, thumbs: {}, format: 'md', choices: {}, readAcross, rationale: { text: 'Mine.', source: 'user' }, busy: null, error: null, hasKey: true });
+    expect(html).toContain('A · Font size <b>16px</b>');
+    expect(html).toContain('B · Font size <b>10px</b>');
+    expect(html).toContain('User authored');
+    expect(html).toContain('Ask again');
   });
 });

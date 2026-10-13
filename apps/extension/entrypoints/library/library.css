@@ -117,3 +117,27 @@ button.danger:hover { color: var(--fail); background: var(--fail-bg); border-col
 .shot-open:hover { background: transparent; }
 .shot-hint { position: absolute; right: 10px; bottom: 10px; font-size: 12px; background: #252523e6; color: #fffefa; padding: 4px 10px; border-radius: 99px; opacity: 0; transition: opacity .12s; }
 .shot-open:hover .shot-hint, .shot-open:focus-visible .shot-hint { opacity: 1; }
+.insight, .rationale { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; }
+.insight .point { padding: 10px 0; border-top: 1px solid var(--line); }
+.insight .point:first-child { border-top: 0; padding-top: 0; }
+.insight .point p { margin: 2px 0 6px; }
+.insight .sub { font: 600 12px system-ui; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin: 14px 0 4px; }
+.insight .meta { margin-top: 10px; }
+.insight .link { border: 0; background: none; padding: 0; color: var(--selection); text-decoration: underline; font-size: 11px; }
+.letter-inline { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--ink); color: var(--surface); font: 700 11px/1 system-ui; margin-right: 6px; flex: none; }
+.borrow { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+.borrow fieldset { display: grid; gap: 4px; }
+.borrow .opt { display: flex; align-items: center; gap: 6px; margin: 0; padding: 6px 8px; border-radius: 8px; cursor: pointer; font-size: 13px; }
+.borrow .opt:has(input:checked) { background: #fff3bd; }
+.borrow .opt input { accent-color: var(--ink); }
+.borrow .val { overflow-wrap: anywhere; }
+.borrow .omit { color: var(--muted); }
+.borrow .sw { display: inline-block; width: 12px; height: 12px; border-radius: 3px; border: 1px solid #0002; margin-right: 6px; vertical-align: -2px; }
+.contrast { margin: 12px 0 0; padding: 10px 14px; border-radius: 12px; font-size: 13px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.contrast.ok { background: var(--measured-bg); color: var(--measured); }
+.contrast.bad { background: var(--fail-bg); color: var(--fail); }
+.contrast.neutral { background: var(--canvas); color: var(--muted); }
+.rationale-head { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; min-height: 28px; }
+.rationale textarea { width: 100%; font: inherit; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); resize: vertical; }
+.badge.user { background: #fff3bd; color: #6b5100; }
+.compare .pending { font-size: 13px; color: var(--inferred); }

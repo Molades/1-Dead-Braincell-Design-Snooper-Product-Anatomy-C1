@@ -1,4 +1,4 @@
-import { analyze, AnalysisError } from '@pixelpeeper/analysis';
+import { analyze, AnalysisError, compareIdeas } from '@pixelpeeper/analysis';
 import { evaluate } from '@pixelpeeper/rules';
 import { CaptureRecord, DEFAULT_PROFILE, Facts, normalizeAnalysis, Profile, type StoredImage } from '@pixelpeeper/schema';
 import { Store, type ListQuery } from '@pixelpeeper/store';
@@ -29,7 +29,8 @@ type Msg =
   | { type: 'pp:profile:get' }
   | { type: 'pp:profile:set'; patch: Partial<Profile> }
   | { type: 'pp:test-key'; provider: Provider; key: string }
-  | { type: 'pp:open-welcome' };
+  | { type: 'pp:open-welcome' }
+  | { type: 'pp:compare'; ids: string[]; mode: 'readAcross' | 'rationale'; direction?: string; extraNumbers?: number[] };
 
 
 function toBase64(buffer: ArrayBuffer): string {
@@ -167,6 +168,20 @@ async function handle(msg: Msg, sender: chrome.runtime.MessageSender): Promise<u
     case 'pp:test-key':
       try { return { error: await testKey(msg.provider, msg.key.trim()) }; }
       catch { return { error: `Could not reach ${PROVIDERS[msg.provider].label}. Check your connection.` }; }
+    case 'pp:compare': {
+      const settings = await loadSettings();
+      const key = activeKey(settings);
+      if (!key) return { error: `Add your ${PROVIDERS[settings.provider].label} API key in Pixel Peeper settings.`, code: 'no-key' };
+      const records = (await Promise.all(msg.ids.map((id) => store.get(id)))).filter((r): r is CaptureRecord => !!r);
+      if (records.length < 2) return { error: 'Two or three saved ideas are needed to compare.', code: 'api' };
+      const profile = await getProfile();
+      const insight = await compareIdeas({
+        provider: settings.provider, model: activeModel(settings), apiKey: key, audience: profile.level, mode: msg.mode,
+        direction: msg.direction, extraNumbers: msg.extraNumbers, signal: AbortSignal.timeout(180_000),
+        items: records.map((r) => ({ facts: r.facts, scope: r.scope, pattern: r.pattern, site: r.page.siteName, page: r.page.pageName, analysis: normalizeAnalysis(r.analysis) })),
+      });
+      return { insight };
+    }
     case 'pp:open-welcome':
       await chrome.tabs.create({ url: chrome.runtime.getURL('/welcome.html') });
       return { ok: true };

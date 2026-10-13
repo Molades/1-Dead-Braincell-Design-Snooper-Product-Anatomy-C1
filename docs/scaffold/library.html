@@ -14,7 +14,17 @@
     <div class="toast" role="status" hidden></div>
     <script type="module">
 // Preview only: stand-ins for extension APIs, plus optional sample data (?seed).
-window.chrome={runtime:{onMessage:{addListener(){}},openOptionsPage:async()=>alert('Settings opens the extension options page.'),getURL:p=>p}};
+window.chrome={
+  runtime:{id:'preview',onMessage:{addListener(){}},openOptionsPage:async()=>alert('Settings opens the extension options page.'),getURL:p=>p,
+    // Fake AI replies for Compare (the real ones come from the background worker).
+    sendMessage:async m=>{ if(m.type!=='pp:compare') return {ok:true}; await new Promise(r=>setTimeout(r,900));
+      const c=(id,title,text,evidence,tag)=>({id,title,text,label:'inferred',evidence,...(tag?{tag}:{})});
+      return m.mode==='readAcross'
+        ? {insight:{kind:'readAcross',claims:[c('k1','Container versus action','A frames a whole plan with a border and generous padding, while B is a single filled action with no frame.',['A:shape.borderWidth','A:spacing.padding','B:color.background']),c('k2','Where the weight sits','In A the large price carries the weight; in B the dark fill does.',['A:typography.fontSize','B:color.contrast'])],bestFor:[c('b1','comparing plans side by side','A’s frame groups price and action as one choice.',['A:shape.borderRadius'],'A'),c('b2','one obvious next step','B’s fill makes it the heaviest object around it.',['B:color.background'],'B')],rejected:[{text:'x',reason:'States unmeasured number(s): 52'}],modelInfo:{provider:'groq',model:'qwen/qwen3.8-27b'},createdAt:new Date().toISOString()}}
+        : {insight:{kind:'rationale',claims:[c('r1','Calm frame, loud action','A’s bordered card gives structure while B’s dark fill keeps the action obvious.',['A:shape.borderWidth','B:color.background'])],bestFor:[],rejected:[],modelInfo:{provider:'groq',model:'qwen/qwen3.8-27b'},createdAt:new Date().toISOString()}};
+    }},
+  storage:{local:{get:async()=>({'pixelpeeper.settings':{provider:'groq',keys:{groq:'preview'},models:{}}}),set:async()=>{},remove:async()=>{}}},
+};
 const {Store}=await import('../../packages/store/src/index.ts');
 const {measureElement,pageInfo,patternName,captureTitle}=await import('../../packages/measure/src/index.ts');
 if(new URLSearchParams(location.search).has('seed')){

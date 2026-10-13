@@ -54,6 +54,12 @@ describe('trust boundary', () => {
     expect(a.rejected.map((r) => r.reason).join()).toMatch(/99/);
   });
 
+  it('matches decimals strictly and whole numbers with rounding', () => {
+    const { ctx } = setup();
+    const a = validate(base({ works: [{ title: 'Close', detail: 'Contrast is about 1.04:1.', evidence: ['color.contrast'] }] }), ctx);
+    expect(a.works).toHaveLength(0);
+  });
+
   it('accepts numbers that are measured or are rule thresholds', () => {
     const { ctx } = setup();
     const a = validate(base({ works: [{ title: 'Readable', detail: 'At 16px with 24px leading it clears the 4.5:1 minimum.', evidence: ['typography.fontSize'] }] }), ctx);

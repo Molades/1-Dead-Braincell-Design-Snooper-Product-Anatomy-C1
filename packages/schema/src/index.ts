@@ -286,6 +286,21 @@ export const CaptureRecord = z.object({
 });
 export type CaptureRecord = z.infer<typeof CaptureRecord>;
 
+/**
+ * AI reading of a comparison or a direction. Every claim is inferred; evidence is written as
+ * "<letter>:<fact path>" (e.g. "A:typography.fontSize") so it points at one specific idea.
+ */
+export const Insight = z.object({
+  kind: z.enum(['readAcross', 'rationale']),
+  claims: z.array(Claim),
+  /** readAcross only: which idea suits which use; `tag` is the letter. */
+  bestFor: z.array(Claim),
+  rejected: z.array(z.object({ text: z.string(), reason: z.string() })),
+  modelInfo: z.object({ provider: z.string(), model: z.string() }),
+  createdAt: z.string(),
+});
+export type Insight = z.infer<typeof Insight>;
+
 /** What the user told onboarding they want; stored locally, never sent except as lesson tone. */
 export const Goal = z.enum(['learn', 'library', 'accessibility', 'tokens']);
 export type Goal = z.infer<typeof Goal>;

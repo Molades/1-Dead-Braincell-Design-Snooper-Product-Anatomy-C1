@@ -40,7 +40,16 @@ export function numbersInText(text: string): number[] {
   return [...new Set(out)];
 }
 
-const matches = (n: number, allowed: number[]) => allowed.some((a) => Math.abs(a - n) <= 0.5 || Math.round(a) === n);
+/**
+ * A stated number matches a measured one when the measured value, rounded to the precision the
+ * number is written with, equals it: 47.6 → "48", 4.54 → "4.5", but 1 does not give "1.04".
+ */
+export function matchesMeasured(n: number, allowed: number[]): boolean {
+  const decimals = (String(n).split('.')[1] ?? '').length;
+  const tolerance = 0.5 * 10 ** -decimals + 1e-9;
+  return allowed.some((a) => Math.abs(a - n) <= tolerance);
+}
+const matches = matchesMeasured;
 
 export interface ValidateContext {
   facts: Facts;

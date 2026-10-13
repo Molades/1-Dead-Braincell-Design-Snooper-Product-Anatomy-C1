@@ -46,7 +46,7 @@ export interface PromptInput {
 }
 
 /** Compact facts for the prompt: drop provenance noise the model does not need. */
-function compactFacts(facts: Facts): unknown {
+export function compactFacts(facts: Facts): unknown {
   const walk = (node: unknown): unknown => {
     if (Array.isArray(node)) return node.map(walk);
     if (node && typeof node === 'object') {

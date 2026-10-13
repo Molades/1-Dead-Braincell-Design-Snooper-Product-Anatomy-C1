@@ -1,6 +1,9 @@
 import { evaluate } from '@pixelpeeper/rules';
 import type { CaptureRecord } from '@pixelpeeper/schema';
-import { compareRows, exportText, FORMAT_LABELS, GROUPS, type Format, type Sources } from './direction';
+import { evaluate as evaluateRules } from '@pixelpeeper/rules';
+import type { Insight } from '@pixelpeeper/schema';
+import { buildDirection, categoryValue, CATEGORIES, CATEGORY_LABELS, compareRows, exportText, FORMAT_LABELS, type Choices, type ExportExtras, type Format } from './direction';
+import { describeEvidence, errorCard, type LessonError } from './lesson';
 import { esc, lessonTab, measurementsTab, rulesTab, tabs, type Tab } from './lesson';
 import { issueCount } from './viewer';
 
@@ -105,23 +108,82 @@ export function ideaView(s: IdeaState): string {
   </div>`;
 }
 
-export interface CompareState { items: CaptureRecord[]; thumbs: Thumbs; sources: Sources; format: Format }
+export interface CompareState {
+  items: CaptureRecord[];
+  thumbs: Thumbs;
+  choices: Choices;
+  format: Format;
+  readAcross: Insight | null;
+  rationale: { text: string; source: 'inferred' | 'user' } | null;
+  /** Which AI request is running, and the last error. */
+  busy: 'readAcross' | 'rationale' | null;
+  error: (LessonError & { mode: 'readAcross' | 'rationale' }) | null;
+  hasKey: boolean;
+}
+
+/** "A:typography.fontSize" → "A · Font size 16px". */
+function letterChip(e: string, items: CaptureRecord[]): string {
+  const m = e.match(/^([ABC]):(.+)$/);
+  const i = m ? 'ABC'.indexOf(m[1]!) : -1;
+  if (!m || i < 0 || !items[i]) return '';
+  const d = describeEvidence(m[2]!, items[i]!.facts, evaluateRules(items[i]!.facts, { scope: items[i]!.scope }));
+  return d ? `<span class="ev" title="Measured">${m[1]} · ${esc(d.label)} <b>${d.value}</b></span>` : '';
+}
+
+function insightBlock(s: CompareState): string {
+  if (s.busy === 'readAcross') return '<p class="pending">Comparing the ideas… This sends their measured values and earlier lessons as text, no screenshots.</p>';
+  if (s.error?.mode === 'readAcross') return errorCard(s.error, Date.now()).replace('data-action="retry"', 'data-action="explain"');
+  if (!s.readAcross) {
+    return s.hasKey
+      ? '<p class="muted">Ask for a read-across of why these feel different and what each suits. Uses one AI request; the result is kept with this comparison.</p><button class="primary" data-action="explain">Explain the differences</button>'
+      : '<p class="muted">Add an API key in settings to get an AI read-across. The measured comparison above works without one.</p><button data-action="settings">Open settings</button>';
+  }
+  const r = s.readAcross;
+  const point = (c: Insight['claims'][number]) => `<div class="point">${c.title ? `<strong>${esc(c.title)}</strong>` : ''}<p>${esc(c.text)}</p><div class="evs">${c.evidence.map((e) => letterChip(e, s.items)).join('')}</div></div>`;
+  return `${r.claims.map(point).join('') || '<p class="muted">No supported differences came back. Try again.</p>'}
+    ${r.bestFor.length ? `<h3 class="sub">Suits</h3>${r.bestFor.map((c) => `<div class="point"><strong><span class="letter-inline">${esc(c.tag)}</span> ${esc(c.title ?? '')}</strong><p>${esc(c.text)}</p><div class="evs">${c.evidence.map((e) => letterChip(e, s.items)).join('')}</div></div>`).join('')}` : ''}
+    <p class="meta">${esc(r.modelInfo.provider)} · ${esc(r.modelInfo.model)}${r.rejected.length ? ` · ${r.rejected.length} unsupported claim${r.rejected.length > 1 ? 's' : ''} removed` : ''} · <button class="link" data-action="explain">Ask again</button></p>`;
+}
+
+function rationaleBlock(s: CompareState): string {
+  const label = s.rationale?.source === 'user' ? '<span class="badge user">User authored</span>' : s.rationale ? '<span class="badge inferred">Inferred · AI draft</span>' : '';
+  const action = s.busy === 'rationale' ? '<p class="pending">Drafting a rationale for your choices…</p>'
+    : s.error?.mode === 'rationale' ? errorCard(s.error, Date.now()).replace('data-action="retry"', 'data-action="draft"')
+    : s.hasKey ? `<button data-action="draft">${s.rationale ? 'Redraft with AI' : 'Draft rationale with AI'}</button>` : '';
+  return `<div class="rationale-head">${label}${action}</div>
+    <textarea data-rationale rows="5" placeholder="Why these choices belong together, where you will use them…">${esc(s.rationale?.text ?? '')}</textarea>
+    <p class="muted">Editing an AI draft makes it yours: it is then exported as User authored.</p>`;
+}
 
 export function compareView(s: CompareState): string {
   const letters = 'ABC';
   const rows = compareRows(s.items);
+  const d = buildDirection(s.items, s.choices);
+  const c = d.contrast;
+  const contrast = !c ? '<p class="contrast neutral">Contrast not checked: text color or background is omitted.</p>'
+    : !c.canMeasure ? `<p class="contrast neutral">Contrast can’t be measured: ${esc(c.reason)}</p>`
+    : `<p class="contrast ${c.aa ? 'ok' : 'bad'}"><span class="badge">Measured</span> ${c.newPairing ? `<b>New pairing</b>: text from ${c.textFrom} on background from ${c.backgroundFrom}` : `Text and background from ${c.textFrom}`} · <b>${c.ratio}:1</b> · AA ${c.aa ? 'pass' : 'fail'} · AAA ${c.aaa ? 'pass' : 'fail'}${c.newPairing ? ' · recomputed for this combination' : ''}</p>`;
+  const extras: ExportExtras = { readAcross: s.readAcross, rationale: s.rationale };
   return `<div class="compare">
     <a class="back" href="#/">← Library</a>
     <h1>Compare ${s.items.length} ideas</h1>
-    <div class="cols" style="--n:${s.items.length}">${s.items.map((r, n) => `<div class="col"><span class="letter">${letters[n]}</span><div class="thumb">${s.thumbs[r.id] ? `<img src="${s.thumbs[r.id]}" alt="">` : '<span class="no-shot">No screenshot</span>'}</div><strong>${esc(r.pattern)}</strong><span class="muted">${esc(r.page.siteName)} · ${esc(r.page.pageName)}</span>${r.analysis?.headline ? `<p class="hl"><span class="badge inferred">Inferred</span> ${esc(r.analysis.headline.text)}</p>` : ''}</div>`).join('')}</div>
+    <div class="cols" style="--n:${s.items.length}">${s.items.map((r, n) => `<div class="col"><span class="letter">${letters[n]}</span><div class="thumb">${s.thumbs[r.id] ? `<img src="${s.thumbs[r.id]}" alt="">` : '<span class="no-shot">No screenshot</span>'}</div><strong>${esc(r.titleSource === 'user' ? r.title : r.pattern)}</strong><span class="muted">${esc(r.page.siteName)} · ${esc(r.page.pageName)}</span>${r.analysis?.headline ? `<p class="hl"><span class="badge inferred">Inferred</span> ${esc(r.analysis.headline.text)}</p>` : ''}</div>`).join('')}</div>
     <h2><span class="badge">Measured</span> Side by side</h2>
     <table class="diff"><thead><tr><th></th>${s.items.map((_, n) => `<th>${letters[n]}</th>`).join('')}</tr></thead><tbody>${rows.map((row) => `<tr class="${row.differs ? 'differs' : ''}"><th>${esc(row.label)}</th>${row.values.map((v) => `<td>${v}</td>`).join('')}</tr>`).join('')}</tbody></table>
-    <p class="muted">Highlighted rows differ. An AI read-across of why they feel different is coming with the next Compare update.</p>
-    <h2>What to borrow</h2>
-    <div class="borrow">${GROUPS.map((g) => `<fieldset><legend>${g}</legend>${s.items.map((_, n) => `<label><input type="radio" name="${g}" value="${n}" ${(s.sources[g] ?? 0) === n ? 'checked' : ''}> ${letters[n]}</label>`).join('')}</fieldset>`).join('')}</div>
+    <p class="muted">Highlighted rows differ.</p>
+    <h2><span class="badge inferred">Inferred</span> Why these feel different</h2>
+    <div class="insight">${insightBlock(s)}</div>
+    <h2>Build your direction</h2>
+    <div class="borrow">${CATEGORIES.map((cat) => {
+      const chosen = s.choices[cat] ?? 0;
+      return `<fieldset><legend>${CATEGORY_LABELS[cat]}</legend>${s.items.map((it, n) => `<label class="opt"><input type="radio" name="${cat}" value="${n}" ${chosen === n ? 'checked' : ''}><span class="letter-inline">${letters[n]}</span><span class="val">${cat === 'textColor' || cat === 'background' ? `<i class="sw" style="background:${esc(categoryValue(it, cat))}"></i>` : ''}${esc(categoryValue(it, cat))}</span></label>`).join('')}<label class="opt omit"><input type="radio" name="${cat}" value="omit" ${chosen === 'omit' ? 'checked' : ''}><span class="val">Leave out</span></label></fieldset>`;
+    }).join('')}</div>
+    ${contrast}
+    <h2>Rationale</h2>
+    <div class="rationale">${rationaleBlock(s)}</div>
     <h2>Export your direction</h2>
     <div class="formats">${(['md', 'json', 'css'] as const).map((f) => `<button data-format="${f}" aria-pressed="${s.format === f}">${FORMAT_LABELS[f]}</button>`).join('')}</div>
-    <pre>${esc(exportText(s.items, s.sources, s.format))}</pre>
+    <pre>${esc(exportText(s.items, s.choices, s.format, extras))}</pre>
     <div class="actions"><button data-action="copy">Copy</button><button class="primary" data-action="download">Download</button></div>
   </div>`;
 }
