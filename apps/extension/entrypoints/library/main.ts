@@ -46,6 +46,9 @@ function toast(html: string, ms = 5000) {
 
 function route(): { name: 'home' } | { name: 'idea'; id: string } | { name: 'compare'; ids: string[] } {
   const hash = decodeURIComponent(location.hash.replace(/^#/, ''));
+  // #/?q=<text> opens Home with a search, e.g. "ideas from this site" from the launcher.
+  const q = hash.match(/^\/\?q=(.*)$/);
+  if (q) { query = q[1]!; filter = 'all'; history.replaceState(null, '', '#/'); }
   const idea = hash.match(/^\/idea\/(.+)$/);
   if (idea) return { name: 'idea', id: idea[1]! };
   const cmp = hash.match(/^\/compare\/(.+)$/);

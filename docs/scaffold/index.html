@@ -13,6 +13,6 @@ const handlers={
   'pp:store:delete':async m=>{await store.delete(m.id);return {ok:true};},
   'pp:store:images':async m=>({images:await store.images(m.ids)}),
 };
-window.chrome={runtime:{getURL:()=>'/apps/extension/public/detective-poses.png',sendMessage:async m=>handlers[m.type]?.(m)}};
+window.chrome={runtime:{id:'preview',getURL:()=>'/apps/extension/public/detective-poses.png',sendMessage:async m=>handlers[m.type]?.(m)}};
 createOverlay().activate();
 </script></body></html>

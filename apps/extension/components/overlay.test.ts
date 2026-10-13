@@ -17,7 +17,7 @@ function fakeBackground(opts: { hasKey?: boolean; thumb?: unknown; analysis?: un
       case 'pp:analyze': return { analysis: opts.analysis };
       case 'pp:store:put': return { record: await store.put(m.record as never, m.images as never) };
       case 'pp:store:save': return { record: await store.save(m.id as string) };
-      case 'pp:store:list': return { records: await store.list() };
+      case 'pp:store:list': return { records: await store.list(m.query as never) };
       case 'pp:store:delete': await store.delete(m.id as string); return { ok: true };
       case 'pp:store:images': return { images: await store.images(m.ids as string[]) };
     }
@@ -31,10 +31,11 @@ describe('floating extension lifecycle', () => {
   let root: ShadowRoot;
   let bg: ReturnType<typeof fakeBackground>;
   const button = (action: string) => root.querySelector<HTMLButtonElement>(`[data-action="${action}"]`)!;
-  const settle = async (ms = 1500) => { for (let i = 0; i < 10; i++) await vi.advanceTimersByTimeAsync(ms / 10); };
+  // Advance the overlay's fake timers and let real event-loop turns run for IndexedDB.
+  const settle = async (ms = 1500) => { for (let i = 0; i < 10; i++) { await vi.advanceTimersByTimeAsync(ms / 10); await new Promise((r) => setImmediate(r)); } };
   function setup(opts?: Parameters<typeof fakeBackground>[0]) {
     bg = fakeBackground(opts);
-    vi.stubGlobal('chrome', { runtime: { getURL: (s: string) => s, sendMessage: bg.sendMessage } });
+    vi.stubGlobal('chrome', { runtime: { id: 'test-extension', getURL: (s: string) => s, sendMessage: bg.sendMessage } });
     ui = createOverlay(); host = document.querySelector('pixel-peeper-overlay')!; root = host.shadowRoot!;
   }
   beforeEach(() => {
@@ -108,6 +109,52 @@ describe('floating extension lifecycle', () => {
     root.querySelector<HTMLButtonElement>('.saved-state')!.click(); await settle(200);
     const [rec] = await bg.store.list({ saved: true });
     expect(bg.calls.some((c) => c.type === 'pp:open-library' && c.id === rec!.id)).toBe(true);
+  });
+
+  it('lets ↑ widen the hovered target before clicking, and selects what was shown', () => {
+    setup();
+    document.body.innerHTML = '<section id="sec"><div id="card" style="border:1px solid #ddd"><h3>Plan</h3><button id="subject"><span id="label">Buy</span></button></div></section>';
+    document.elementFromPoint = () => document.getElementById('label');
+    ui.pick();
+    document.dispatchEvent(new MouseEvent('mousemove', { clientX: 5, clientY: 5 }));
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp' }));
+    document.getElementById('label')!.click();
+    expect(root.querySelector('.crumbs [aria-current="true"]')!.textContent).toBe('Card');
+  });
+
+  it('shows Get lesson with a breadcrumb; Bigger, Smaller and crumbs change the level; nothing is sent before Get lesson', async () => {
+    setup();
+    document.body.innerHTML = '<section id="sec"><div id="card" style="border:1px solid #ddd"><h3>Plan</h3><button id="subject"><span id="label">Buy</span></button></div></section>';
+    document.elementFromPoint = () => document.getElementById('label');
+    select();
+    const current = () => root.querySelector('.crumbs [aria-current="true"]')!.textContent;
+    expect(current()).toBe('Button');
+    expect([...root.querySelectorAll('.crumbs button')].map((b) => b.textContent)).toEqual(['Section', 'Card', 'Button']);
+    button('bigger').click(); expect(current()).toBe('Card');
+    button('smaller').click(); expect(current()).toBe('Button');
+    root.querySelector<HTMLButtonElement>('[data-crumb="0"]')!.click(); expect(current()).toBe('Section');
+    await settle(200);
+    expect(bg.calls.some((c) => c.type === 'pp:capture' || c.type === 'pp:store:put')).toBe(false);
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+    await settle();
+    expect(bg.calls.some((c) => c.type === 'pp:store:put')).toBe(true);
+  });
+
+  it('shows how many ideas were saved from this site', async () => {
+    setup();
+    select(); button('scan').click(); await settle();
+    button('save').click(); await settle(300);
+    expect(root.querySelector<HTMLElement>('.site-count')!.hidden).toBe(false);
+    expect(root.querySelector('.site-count')!.textContent).toBe('1');
+    root.querySelector<HTMLButtonElement>('.site-ideas')!.click(); await settle(100);
+    expect(bg.calls.some((c) => c.type === 'pp:open-library' && c.query === location.hostname)).toBe(true);
+  });
+
+  it('tells the user to reload when the extension was updated underneath the page', async () => {
+    setup();
+    (chrome.runtime as { id?: string }).id = undefined;
+    select(); button('scan').click(); await settle(200);
+    expect(root.querySelector('.feedback')!.textContent).toMatch(/Reload this page/);
   });
 
   it('exports Markdown and CSS with actual line breaks', async () => {

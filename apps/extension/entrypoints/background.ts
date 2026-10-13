@@ -25,7 +25,7 @@ type Msg =
   | { type: 'pp:store:list'; query?: ListQuery }
   | { type: 'pp:store:delete'; id: string }
   | { type: 'pp:store:images'; ids: string[] }
-  | { type: 'pp:open-library'; id?: string };
+  | { type: 'pp:open-library'; id?: string; query?: string };
 
 
 function toBase64(buffer: ArrayBuffer): string {
@@ -68,12 +68,13 @@ async function capture(windowId: number, rect: Rect, dpr: number): Promise<{ ima
 
 /** Open the Library tab, or focus the one already open; `id` selects a capture. */
 const LIBRARY_TAB = 'pixelpeeper.libraryTab';
-async function openLibrary(id?: string): Promise<void> {
-  const url = chrome.runtime.getURL(`/library.html${id ? `#/idea/${encodeURIComponent(id)}` : ''}`);
+async function openLibrary(id?: string, query?: string): Promise<void> {
+  const hash = id ? `#/idea/${encodeURIComponent(id)}` : query ? `#/?q=${encodeURIComponent(query)}` : '';
+  const url = chrome.runtime.getURL(`/library.html${hash}`);
   const known = (await chrome.storage.session.get(LIBRARY_TAB))[LIBRARY_TAB] as number | undefined;
   if (known !== undefined) {
     try {
-      const tab = await chrome.tabs.update(known, { active: true, ...(id ? { url } : {}) });
+      const tab = await chrome.tabs.update(known, { active: true, ...(hash ? { url } : {}) });
       if (tab?.windowId !== undefined) await chrome.windows.update(tab.windowId, { focused: true });
       return;
     } catch { /* the tab was closed */ }
@@ -125,7 +126,7 @@ async function handle(msg: Msg, sender: chrome.runtime.MessageSender): Promise<u
       void notifyLibrary();
       return { ok: true };
     case 'pp:open-library':
-      await openLibrary(msg.id);
+      await openLibrary(msg.id, msg.query);
       return { ok: true };
     case 'pp:store:images':
       return { images: await store.images(msg.ids) };
@@ -168,7 +169,13 @@ export default defineBackground(() => {
   chrome.action.onClicked.addListener(async (tab) => {
     if (!tab.id) return;
     try {
-      await chrome.tabs.sendMessage(tab.id, { type: 'pp:activate' });
+      try {
+        await chrome.tabs.sendMessage(tab.id, { type: 'pp:activate' });
+      } catch {
+        // Tabs opened before install or update have no (or a stale) content script: inject a fresh one.
+        await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ['content-scripts/content.js'] });
+        await chrome.tabs.sendMessage(tab.id, { type: 'pp:activate' });
+      }
       await chrome.action.setBadgeText({ tabId: tab.id, text: '' });
       await chrome.action.setTitle({ tabId: tab.id, title: 'Open Pixel Peeper' });
     } catch {

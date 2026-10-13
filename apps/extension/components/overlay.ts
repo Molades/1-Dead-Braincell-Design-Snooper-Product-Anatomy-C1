@@ -2,7 +2,7 @@ import { captureTitle, measureElement, pageInfo, patternName } from '@pixelpeepe
 import { evaluate } from '@pixelpeeper/rules';
 import { normalizeAnalysis, type Analysis, type CaptureRecord, type Facts, type PageInfo, type StoredImage } from '@pixelpeeper/schema';
 import css from './overlay.css?inline';
-import { snapToComponent } from './grouping';
+import { ancestry, elementLabel, levelDown, levelUp, snapToComponent } from './grouping';
 import { exportText, FILE_NAMES, FORMAT_LABELS, type Format } from './direction';
 import { errorCard, lessonTab, measurementsTab, noKeyCard, placeWindow, progress, rulesTab, tabs, type LessonError, type Tab } from './lesson';
 
@@ -12,21 +12,28 @@ type Image = { base64: string; mediaType: 'image/png' };
 type Thumb = StoredImage;
 type Images = { thumb: Thumb | null; full: Thumb | null };
 /** Messages go to the background worker, which holds the API key; the key never enters this script. */
-async function ask<T>(msg: object): Promise<T | undefined> { try { return await chrome.runtime.sendMessage(msg) as T; } catch { return undefined; } }
+let onStale = () => {};
+async function ask<T>(msg: object): Promise<T | undefined> {
+  // After an extension update this page keeps the old script, which can no longer reach the extension.
+  if (!chrome.runtime?.id) { onStale(); return undefined; }
+  try { return await chrome.runtime.sendMessage(msg) as T; } catch { return undefined; }
+}
 /** Wait for a repaint; background tabs never fire rAF, so fall back to a timer. */
 const frame = () => Promise.race([new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))), new Promise(resolve => setTimeout(resolve, 120))]);
 const esc = (value: unknown) => String(value ?? 'Unavailable').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!));
 
 /** UI scaffold. Capture/model integration is deliberately separate from measurements. */
 export function createOverlay() {
+  // A re-injected script (after an update) replaces any overlay left by the previous one.
+  document.querySelectorAll('pixel-peeper-overlay').forEach((old) => old.remove());
   const host = document.createElement('pixel-peeper-overlay');
   host.style.cssText = 'all:initial;font:14px/1.5 system-ui;color:#252523;color-scheme:light;display:none;position:fixed;inset:0;z-index:2147483647;pointer-events:none;contain:layout style';
   const root = host.attachShadow({mode:'open'});
   root.innerHTML = `<style>${css}</style><div class="box hover"><span class="tag"></span></div><div class="box selected"><span class="tag"></span></div>
-    <div class="toolbar" hidden><button class="primary" data-action="scan">Scan selection</button><button data-action="parent">Parent</button><button data-action="child">Child</button><button data-action="clear">Clear</button></div>
-    <div class="hint" hidden>Hover to preview · Click to select · Hold ⌥ Option for the exact element · Esc to exit</div><div class="scan" hidden aria-hidden="true"><div class="pixels">${Array.from({length:12},(_,i)=>`<i style="left:${8+i*17%84}%;top:${12+i*23%76}%"></i>`).join('')}</div><div class="beam"></div></div><div class="scan-label" hidden role="status"></div>
+    <div class="toolbar" role="toolbar" aria-label="Selection" hidden></div>
+    <div class="hint" hidden>Hover to preview · Click to select · <kbd>↑</kbd><kbd>↓</kbd> bigger / smaller · hold <kbd>⌥</kbd> for the exact element · <kbd>Esc</kbd> to exit</div><div class="scan" hidden aria-hidden="true"><div class="pixels">${Array.from({length:12},(_,i)=>`<i style="left:${8+i*17%84}%;top:${12+i*23%76}%"></i>`).join('')}</div><div class="beam"></div></div><div class="scan-label" hidden role="status"></div>
     <section class="window" hidden aria-label="Pixel Peeper workspace"><header class="head"><span class="handle">Pixel Peeper</span><button data-action="hide">Hide</button></header><div class="body"></div><footer class="foot"></footer></section>
-    <div class="launcher"><button class="mascot" aria-label="Open Pixel Peeper controls" aria-expanded="false" aria-controls="menu"><span class="sprite" aria-hidden="true"></span></button><nav class="dock" id="menu" aria-label="Pixel Peeper controls"><button class="primary" data-action="pick">Pick element</button><button data-action="page">Pick whole page</button><button data-action="library">Library</button><button data-action="resume">Last lesson</button></nav></div><div class="feedback" role="status" aria-live="polite" hidden></div>`;
+    <div class="launcher"><button class="mascot" aria-label="Open Pixel Peeper controls" aria-expanded="false" aria-controls="menu"><span class="sprite" aria-hidden="true"></span><span class="site-count" aria-hidden="true" hidden></span></button><nav class="dock" id="menu" aria-label="Pixel Peeper controls"><button class="primary" data-action="pick">Pick element</button><button data-action="page">Pick whole page</button><button data-action="library">Library</button><button data-action="resume">Last lesson</button><button class="site-ideas" data-action="site-ideas" hidden></button></nav></div><div class="feedback" role="status" aria-live="polite" hidden></div>`;
   // Keep the mascot first in keyboard order; place it last visually.
   const q = <T extends HTMLElement = HTMLElement>(s:string) => root.querySelector<T>(s)!;
   q('.mascot').style.order = '2'; q('.dock').style.order = '1';
@@ -34,6 +41,7 @@ export function createOverlay() {
   document.documentElement.append(host); host.hidden = true;
   let active=false,picking=false,selected:Element|null=null,facts:Facts|null=null,scope:'element'|'page'='element';
   let analysis:Analysis|null=null,lessonError:LessonError|null=null,lastImage:Image|null=null,hasKey=false,interpreting=false,hovered:Element|null=null;
+  let rawTarget:Element|null=null,selectedRaw:Element|null=null,crumbs:Element[]=[],siteIdeas=0;
   let tab:Tab='lesson',step=0,stepStart=0,ticker:ReturnType<typeof setInterval>|undefined,userPlaced=false;
   /**
    * The current capture: `captureId` is its library record id. `capture`/`full` are its images, live
@@ -47,7 +55,7 @@ export function createOverlay() {
   const abort = new AbortController(), signal = abort.signal;
   function notify(message:string){clearTimeout(feedbackTimer);q('.feedback').textContent=message;q('.feedback').hidden=false;feedbackTimer=setTimeout(()=>q('.feedback').hidden=true,2800);}
   function menu(open:boolean){clearTimeout(menuTimer);q('.launcher').classList.toggle('open',open);q('.mascot').setAttribute('aria-expanded',String(open));q('.mascot').setAttribute('aria-label',open?'Close Pixel Peeper controls':'Open Pixel Peeper controls');}
-  function place(box:HTMLElement,el:Element|null,kind?:string|null){if(!el?.isConnected){box.style.display='none';return;}const r=el.getBoundingClientRect();Object.assign(box.style,{display:'block',left:`${r.left}px`,top:`${r.top}px`,width:`${r.width}px`,height:`${r.height}px`});const tag=box.querySelector('.tag');if(tag)tag.textContent=`${el.tagName.toLowerCase()}${kind==='container'?' · group':''} · ${Math.round(r.width)}×${Math.round(r.height)}`;}
+  function place(box:HTMLElement,el:Element|null){if(!el?.isConnected){box.style.display='none';return;}const r=el.getBoundingClientRect();Object.assign(box.style,{display:'block',left:`${r.left}px`,top:`${r.top}px`,width:`${r.width}px`,height:`${r.height}px`});const tag=box.querySelector('.tag');if(tag)tag.textContent=`${elementLabel(el)} · ${Math.round(r.width)}×${Math.round(r.height)}`;}
   /** Page scope means the visible viewport, never claimed as the full page. */
   const viewport=()=>({left:0,top:0,right:innerWidth,bottom:innerHeight,width:innerWidth,height:innerHeight});
   const bounds=()=>scope==='page'?viewport():selected!.getBoundingClientRect();
@@ -55,13 +63,20 @@ export function createOverlay() {
   function cancel(){run++;interpreting=false;clearInterval(ticker);q('.scan').hidden=true;q('.scan-label').hidden=true;if(phase==='scanning')phase=facts?'selected':'idle';}
   function pick(){cancel();picking=true;q('.hint').hidden=false;q('.window').hidden=true;q('.toolbar').hidden=true;menu(false);}
   function stopPick(){picking=false;q('.hint').hidden=true;place(q('.hover'),null);}
-  function select(el:Element,wholePage=false){cancel();stopPick();selected=el;scope=wholePage?'page':'element';facts=null;analysis=null;lessonError=null;lastImage=null;tab='lesson';step=0;capture=null;full=null;imagesFor=null;shotOpen=false;page=null;imagesStored=false;currentSaved=false;phase='selected';q('.window').hidden=true;q('.toolbar').hidden=false;geometry();menu(false);}
+  function select(el:Element,wholePage=false,raw:Element|null=selectedRaw){cancel();stopPick();selected=el;selectedRaw=raw;scope=wholePage?'page':'element';facts=null;analysis=null;lessonError=null;lastImage=null;tab='lesson';step=0;capture=null;full=null;imagesFor=null;shotOpen=false;page=null;imagesStored=false;currentSaved=false;phase='selected';q('.window').hidden=true;toolbar();q('.toolbar').hidden=false;geometry();menu(false);q<HTMLButtonElement>('.toolbar .primary').focus({preventScroll:true});}
+  /** Get lesson, then where you are (breadcrumb), then how to change it. Nothing is sent before Get lesson. */
+  function toolbar(){if(!selected)return;crumbs=scope==='page'?[]:ancestry(selected);const up=scope!=='page'&&!!levelUp(selected),down=scope!=='page'&&!!levelDown(selected,selectedRaw);
+    q('.toolbar').innerHTML=`<button class="primary" data-action="scan">Get lesson <kbd>↵</kbd></button>${crumbs.length?`<nav class="crumbs" aria-label="Selection level">${crumbs.map((el,i)=>`<button data-crumb="${i}" ${el===selected?'aria-current="true"':''}>${esc(elementLabel(el))}</button>`).join('<span aria-hidden="true">›</span>')}</nav>`:''}<button data-action="bigger" title="Bigger (↑)" aria-label="Select the container (bigger)" ${up?'':'disabled'}>↑</button><button data-action="smaller" title="Smaller (↓)" aria-label="Select inside (smaller)" ${down?'':'disabled'}>↓</button><button data-action="pick" title="Pick something else">Pick again</button>`;}
+  function bigger(){const el=selected&&levelUp(selected);if(el)select(el);}
+  function smaller(){const el=selected&&levelDown(selected,selectedRaw);if(el)select(el);}
   const own = (event:Event) => event.composedPath().includes(host);
   /** Snap to the enclosing component unless Option/Alt is held. */
   function target(e:MouseEvent){const t=document.elementFromPoint(e.clientX,e.clientY);if(!t||t===host)return null;return e.altKey?{el:t,reason:null}:snapToComponent(t);}
-  document.addEventListener('mousemove',e=>{if(!picking||own(e))return;const hit=target(e);hovered=hit?.el??null;place(q('.hover'),hovered,hit?.reason);},{capture:true,signal});
-  document.addEventListener('click',e=>{if(!active||own(e))return;menu(false);if(!picking)return;const el=target(e)?.el;if(!el)return;e.preventDefault();e.stopImmediatePropagation();select(el);},{capture:true,signal});
-  document.addEventListener('keydown',e=>{if(!active)return;if(e.key==='Escape'){cancel();stopPick();menu(false);q('.window').hidden=true;q('.toolbar').hidden=true;q('.mascot').focus();}if(!own(e)&&phase==='selected'&&!['INPUT','TEXTAREA','SELECT'].includes((e.target as Element)?.tagName)&&(e.key==='ArrowUp'||e.key==='ArrowDown')){const el=e.key==='ArrowUp'?selected?.parentElement:selected?.firstElementChild;if(el&&el!==host){e.preventDefault();select(el);}}},{capture:true,signal});
+  document.addEventListener('mousemove',e=>{if(!picking||own(e))return;const t=document.elementFromPoint(e.clientX,e.clientY);if(!t||t===host)return;if(t===rawTarget&&hovered&&!e.altKey)return;rawTarget=t;const hit=target(e);hovered=hit?.el??null;place(q('.hover'),hovered);},{capture:true,signal});
+  document.addEventListener('click',e=>{if(!active||own(e))return;menu(false);if(!picking)return;const raw=document.elementFromPoint(e.clientX,e.clientY);if(!raw||raw===host)return;const el=e.altKey?raw:hovered&&hovered.contains(raw)?hovered:target(e)?.el;if(!el)return;e.preventDefault();e.stopImmediatePropagation();select(el,false,raw);},{capture:true,signal});
+  document.addEventListener('keydown',e=>{if(!active)return;if(e.key==='Escape'){cancel();stopPick();menu(false);q('.window').hidden=true;q('.toolbar').hidden=true;q('.mascot').focus();}const typing=['INPUT','TEXTAREA','SELECT'].includes((e.target as Element)?.tagName)||(e.target as HTMLElement)?.isContentEditable;if(typing)return;
+    if(picking&&hovered&&(e.key==='ArrowUp'||e.key==='ArrowDown')){const next=e.key==='ArrowUp'?levelUp(hovered):levelDown(hovered,rawTarget);if(next){e.preventDefault();hovered=next;place(q('.hover'),hovered);}return;}
+    if(phase==='selected'&&!picking){if(e.key==='ArrowUp'){e.preventDefault();bigger();}else if(e.key==='ArrowDown'){e.preventDefault();smaller();}else if(e.key==='Enter'&&(!own(e)||(e.target as Element)?.closest?.('.toolbar'))){e.preventDefault();void scan();}}},{capture:true,signal});
   q('.mascot').onclick=()=>menu(!q('.launcher').classList.contains('open'));
   q('.launcher').addEventListener('pointerenter',()=>clearTimeout(menuTimer),{signal});
   q('.launcher').addEventListener('pointerleave',()=>{menuTimer=setTimeout(()=>{if(!root.activeElement?.matches(':focus-visible'))menu(false);},300);},{signal});
@@ -125,16 +140,20 @@ export function createOverlay() {
   async function save(){if(!facts)return;if(currentSaved){notify('Already in your saved ideas.');return;}
     const stored=await persist();const res=stored?await ask<{record?:Saved|null}>({type:'pp:store:save',id:captureId}):undefined;
     if(!res?.record){notify('Could not save. Your measurements are still available to export.');return;}
-    currentSaved=true;render();clearTimeout(poseTimer);q('.launcher').classList.add('collected');notify('Idea spotted. Source credited. Saved!');poseTimer=setTimeout(()=>q('.launcher').classList.remove('collected'),2800);}
+    currentSaved=true;render();void refreshSiteIdeas();clearTimeout(poseTimer);q('.launcher').classList.add('collected');notify('Idea spotted. Source credited. Saved!');poseTimer=setTimeout(()=>q('.launcher').classList.remove('collected'),2800);}
   /** Export the current capture. Comparing several ideas lives in the Library tab. */
   function exportView(){const rec=record();if(!rec)return;show(`<h2>Export</h2><p class="muted">${esc(rec.title)}</p><div class="formats">${(['md','json','css'] as const).map(f=>`<button data-format="${f}" class="${format===f?'active':''}">${FORMAT_LABELS[f]}</button>`).join('')}</div><pre>${esc(exportText([rec],{},format))}</pre><p class="muted">To combine values from several ideas, use Compare in the Library.</p>`,'<button data-action="back-lesson">Back to lesson</button><button class="primary" data-action="download">Download</button>');}
   /** Open the Library tab, optionally on one capture. */
-  function openLibrary(id?:string){void ask({type:'pp:open-library',id});}
-  root.addEventListener('click',e=>{const target=(e.target as Element).closest<HTMLElement>('button');if(!target)return;const action=target.dataset.action;if(target.dataset.tab){tab=target.dataset.tab as Tab;q('.body').scrollTop=0;lesson();return;}
-    if(target.dataset.format){format=target.dataset.format as Format;exportView();return;}switch(action){case'pick':pick();break;case'page':select(document.documentElement,true);q('.toolbar').hidden=true;void scan();break;case'scan':void scan();break;case'parent':if(selected?.parentElement)select(selected.parentElement);break;case'child':if(selected?.firstElementChild)select(selected.firstElementChild);break;case'clear':cancel();selected=null;facts=null;stopPick();place(q('.selected'),null);q('.toolbar').hidden=true;break;case'hide':suppressResult=true;q('.window').hidden=true;break;case'resume':if(phase==='scanning'){suppressResult=false;show('<h2>Reading computed styles</h2><p class="muted">Your selected element is being measured.</p>','<button data-action="hide">Hide</button>');}else lesson();break;case'library':void persist().then(()=>openLibrary());break;case'saved':openLibrary(captureId);break;case'back-lesson':lesson();break;case'save':void save();break;case'export':exportView();break;case'retry':if(facts&&phase!=='scanning'){cancel();void interpret(run);}break;case'toggle-shot':shotOpen=!shotOpen;render();break;case'cancel':cancel();phase=facts?'result':'idle';q('.window').hidden=true;break;case'settings':void ask({type:'pp:open-options'});break;case'download':{const rec=record();if(!rec)break;const blob=new Blob([exportText([rec],{},format)],{type:'text/plain'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=FILE_NAMES[format];a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);break;}}},{signal});
+  function openLibrary(id?:string,query?:string){void ask({type:'pp:open-library',id,query});}
+  /** Count saved ideas from this site for the launcher badge. */
+  async function refreshSiteIdeas(){const res=await ask<{records?:Saved[]}>({type:'pp:store:list',query:{host:location.hostname,saved:true}});if(destroyed)return;siteIdeas=res?.records?.length??0;
+    const btn=q('.site-ideas'),badge=q('.site-count');btn.hidden=badge.hidden=siteIdeas===0;btn.textContent=`${siteIdeas} idea${siteIdeas===1?'':'s'} from this site`;badge.textContent=String(siteIdeas);q('.mascot').setAttribute('aria-label',`Open Pixel Peeper controls${siteIdeas?` (${siteIdeas} saved from this site)`:''}`);}
+  root.addEventListener('click',e=>{const target=(e.target as Element).closest<HTMLElement>('button');if(!target)return;const action=target.dataset.action;if(target.dataset.crumb){const el=crumbs[Number(target.dataset.crumb)];if(el&&el!==selected)select(el);return;}if(target.dataset.tab){tab=target.dataset.tab as Tab;q('.body').scrollTop=0;lesson();return;}
+    if(target.dataset.format){format=target.dataset.format as Format;exportView();return;}switch(action){case'pick':pick();break;case'page':select(document.documentElement,true);q('.toolbar').hidden=true;void scan();break;case'scan':void scan();break;case'bigger':bigger();break;case'smaller':smaller();break;case'site-ideas':openLibrary(undefined,location.hostname);break;case'hide':suppressResult=true;q('.window').hidden=true;break;case'resume':if(phase==='scanning'){suppressResult=false;show('<h2>Reading computed styles</h2><p class="muted">Your selected element is being measured.</p>','<button data-action="hide">Hide</button>');}else lesson();break;case'library':void persist().then(()=>openLibrary());break;case'saved':openLibrary(captureId);break;case'back-lesson':lesson();break;case'save':void save();break;case'export':exportView();break;case'retry':if(facts&&phase!=='scanning'){cancel();void interpret(run);}break;case'toggle-shot':shotOpen=!shotOpen;render();break;case'cancel':cancel();phase=facts?'result':'idle';q('.window').hidden=true;break;case'settings':void ask({type:'pp:open-options'});break;case'download':{const rec=record();if(!rec)break;const blob=new Blob([exportText([rec],{},format)],{type:'text/plain'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=FILE_NAMES[format];a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);break;}}},{signal});
   let drag:{x:number;y:number;left:number;top:number}|null=null;
   q('.handle').addEventListener('pointerdown',e=>{userPlaced=true;const r=q('.window').getBoundingClientRect();drag={x:e.clientX,y:e.clientY,left:r.left,top:r.top};q('.handle').setPointerCapture(e.pointerId);},{signal});
   q('.handle').addEventListener('pointermove',e=>{if(!drag)return;Object.assign(q('.window').style,{left:`${Math.max(8,Math.min(innerWidth-q('.window').offsetWidth-8,drag.left+e.clientX-drag.x))}px`,top:`${Math.max(8,Math.min(innerHeight-q('.window').offsetHeight-8,drag.top+e.clientY-drag.y))}px`,right:'auto',bottom:'auto'});},{signal});
   q('.handle').addEventListener('pointerup',()=>drag=null,{signal});
-  return {activate(){active=true;host.hidden=false;host.style.display='block';},pick(){active=true;host.hidden=false;host.style.display='block';pick();},deactivate(){active=false;cancel();stopPick();host.hidden=true;host.style.display='none';},destroy(){destroyed=true;cancel();clearInterval(ticker);abort.abort();clearTimeout(menuTimer);clearTimeout(feedbackTimer);clearTimeout(poseTimer);host.remove();}};
+  onStale=()=>notify('Pixel Peeper was updated. Reload this page to keep using it.');
+  return {activate(){active=true;host.hidden=false;host.style.display='block';void refreshSiteIdeas();},pick(){active=true;host.hidden=false;host.style.display='block';pick();},deactivate(){active=false;cancel();stopPick();host.hidden=true;host.style.display='none';},destroy(){destroyed=true;cancel();clearInterval(ticker);abort.abort();clearTimeout(menuTimer);clearTimeout(feedbackTimer);clearTimeout(poseTimer);host.remove();}};
 }

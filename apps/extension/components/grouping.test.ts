@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { boundaryReason, snapToComponent } from './grouping';
+import { ancestry, boundaryReason, elementLabel, levelDown, levelUp, snapToComponent } from './grouping';
 
 const $ = (id: string) => document.getElementById(id)!;
 afterEach(() => { document.body.innerHTML = ''; });
@@ -26,5 +26,23 @@ describe('component snapping', () => {
   it('falls back to the element itself when nothing qualifies', () => {
     document.body.innerHTML = '<div><div><span id="x">plain</span></div></div>';
     expect(snapToComponent($('x')).el).toBe($('x'));
+  });
+
+  it('names levels for the breadcrumb', () => {
+    document.body.innerHTML = '<section id="s"><div id="card" style="border:1px solid #ddd"><h3 id="h">Plan</h3><button id="b"><span id="t">Buy</span></button></div></section>';
+    expect(elementLabel($('card'))).toBe('Card');
+    expect(elementLabel($('b'))).toBe('Button');
+    expect(elementLabel($('h'))).toBe('Heading');
+    expect(ancestry($('b')).map(elementLabel)).toEqual(['Section', 'Card', 'Button']);
+    document.body.innerHTML = '<div id="g" style="display:grid"><a>1</a><a>2</a></div><div id="r" style="display:flex"><a>1</a><a>2</a></div><div id="c" style="display:flex;flex-direction:column"><a>1</a><a>2</a></div>';
+    expect([elementLabel($('g')), elementLabel($('r')), elementLabel($('c'))]).toEqual(['Grid', 'Row', 'Stack']);
+  });
+  it('goes bigger up to the body and smaller back toward what was pointed at', () => {
+    document.body.innerHTML = '<section id="s"><div id="card"><h3>Plan</h3><button id="b"><span id="t">Buy</span></button></div></section>';
+    expect(levelUp($('card'))).toBe($('s'));
+    expect(levelUp($('s'))).toBeNull();
+    expect(levelDown($('s'), $('t'))).toBe($('card'));
+    expect(levelDown($('card'), $('t'))).toBe($('b'));
+    expect(levelDown($('b'), $('t'))).toBe($('t'));
   });
 });
