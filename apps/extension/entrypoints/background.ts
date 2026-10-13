@@ -24,7 +24,8 @@ type Msg =
   | { type: 'pp:store:get'; id: string }
   | { type: 'pp:store:list'; query?: ListQuery }
   | { type: 'pp:store:delete'; id: string }
-  | { type: 'pp:store:images'; ids: string[] };
+  | { type: 'pp:store:images'; ids: string[] }
+  | { type: 'pp:open-library'; id?: string };
 
 
 function toBase64(buffer: ArrayBuffer): string {
@@ -65,6 +66,25 @@ async function capture(windowId: number, rect: Rect, dpr: number): Promise<{ ima
   };
 }
 
+/** Open the Library tab, or focus the one already open; `id` selects a capture. */
+const LIBRARY_TAB = 'pixelpeeper.libraryTab';
+async function openLibrary(id?: string): Promise<void> {
+  const url = chrome.runtime.getURL(`/library.html${id ? `#/idea/${encodeURIComponent(id)}` : ''}`);
+  const known = (await chrome.storage.session.get(LIBRARY_TAB))[LIBRARY_TAB] as number | undefined;
+  if (known !== undefined) {
+    try {
+      const tab = await chrome.tabs.update(known, { active: true, ...(id ? { url } : {}) });
+      if (tab?.windowId !== undefined) await chrome.windows.update(tab.windowId, { focused: true });
+      return;
+    } catch { /* the tab was closed */ }
+  }
+  const tab = await chrome.tabs.create({ url });
+  await chrome.storage.session.set({ [LIBRARY_TAB]: tab.id });
+}
+
+/** Tell an open Library tab to refresh after the overlay changes the store. */
+const notifyLibrary = () => chrome.runtime.sendMessage({ type: 'pp:library:changed' }).catch(() => {});
+
 async function handle(msg: Msg, sender: chrome.runtime.MessageSender): Promise<unknown> {
   switch (msg.type) {
     case 'pp:status':
@@ -86,16 +106,26 @@ async function handle(msg: Msg, sender: chrome.runtime.MessageSender): Promise<u
       const analysis = await analyze({ provider: settings.provider, model: activeModel(settings), apiKey: key, facts, results, image: msg.image, scope: msg.scope, signal: AbortSignal.timeout(180_000) });
       return { analysis };
     }
-    case 'pp:store:put':
-      return { record: await store.put(CaptureRecord.parse(msg.record), msg.images) };
-    case 'pp:store:save':
-      return { record: await store.save(msg.id, { title: msg.title, note: msg.note }) };
+    case 'pp:store:put': {
+      const record = await store.put(CaptureRecord.parse(msg.record), msg.images);
+      void notifyLibrary();
+      return { record };
+    }
+    case 'pp:store:save': {
+      const record = await store.save(msg.id, { title: msg.title, note: msg.note });
+      void notifyLibrary();
+      return { record };
+    }
     case 'pp:store:get':
       return { record: await store.get(msg.id) };
     case 'pp:store:list':
       return { records: await store.list(msg.query) };
     case 'pp:store:delete':
       await store.delete(msg.id);
+      void notifyLibrary();
+      return { ok: true };
+    case 'pp:open-library':
+      await openLibrary(msg.id);
       return { ok: true };
     case 'pp:store:images':
       return { images: await store.images(msg.ids) };

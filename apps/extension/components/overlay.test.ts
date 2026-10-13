@@ -99,26 +99,15 @@ describe('floating extension lifecycle', () => {
     expect((await bg.store.images([rec!.id]))[rec!.id]!.thumb).toEqual(thumb);
   });
 
-  it('lists Ideas and Recent in the library, and deletes', async () => {
+  it('opens the Library tab from the launcher, and on the saved capture from the lesson', async () => {
     setup();
     select(); button('scan').click(); await settle();
+    root.querySelector<HTMLButtonElement>('.dock [data-action="library"]')!.click(); await settle(200);
+    expect(bg.calls.some((c) => c.type === 'pp:open-library' && c.id === undefined)).toBe(true);
     button('save').click(); await settle(200);
-    select(); button('scan').click(); await settle();
-    button('saved').click(); await settle(200);
-    expect(root.querySelectorAll('[data-compare]')).toHaveLength(1);
-    expect(root.querySelectorAll('[data-keep]')).toHaveLength(1);
-    root.querySelector<HTMLButtonElement>('[data-delete]')!.click(); await settle(200);
-    expect(await bg.store.list()).toHaveLength(1);
-  });
-
-  it('reopens a saved idea from the library', async () => {
-    setup();
-    select(); button('scan').click(); await settle();
-    button('save').click(); await settle(200);
-    button('saved').click(); await settle(200);
-    root.querySelector<HTMLButtonElement>('[data-open]')!.click(); await settle(200);
-    expect(root.querySelector('.lesson-head h2')!.textContent).toBe('Button “Inspect me”');
-    expect(root.querySelector('.saved-state')).not.toBeNull();
+    root.querySelector<HTMLButtonElement>('.saved-state')!.click(); await settle(200);
+    const [rec] = await bg.store.list({ saved: true });
+    expect(bg.calls.some((c) => c.type === 'pp:open-library' && c.id === rec!.id)).toBe(true);
   });
 
   it('exports Markdown and CSS with actual line breaks', async () => {

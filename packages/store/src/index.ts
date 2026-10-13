@@ -94,6 +94,32 @@ export class Store {
     return next;
   }
 
+  /** Edit user-authored fields without changing saved state. */
+  async update(id: string, patch: { title?: string; note?: string }): Promise<CaptureRecord | null> {
+    const tx = await this.tx(['captures'], 'readwrite');
+    const store = tx.objectStore('captures');
+    const record = (await request(store.get(id))) as CaptureRecord | undefined;
+    if (!record) { await complete(tx); return null; }
+    const title = patch.title?.trim();
+    const next: CaptureRecord = {
+      ...record,
+      updatedAt: new Date(this.now()).toISOString(),
+      ...(title && title !== record.title ? { title, titleSource: 'user' as const } : {}),
+      ...(patch.note !== undefined ? { note: patch.note } : {}),
+    };
+    store.put(next);
+    await complete(tx);
+    return next;
+  }
+
+  /** Put back a record and its images exactly as they were (undo a delete). */
+  async restore(record: CaptureRecord, images?: CaptureImages): Promise<void> {
+    const tx = await this.tx(['captures', 'images'], 'readwrite');
+    tx.objectStore('captures').put(CaptureRecord.parse(record));
+    if (images) tx.objectStore('images').put(images);
+    await complete(tx);
+  }
+
   async get(id: string): Promise<CaptureRecord | null> {
     const tx = await this.tx(['captures'], 'readonly');
     return ((await request(tx.objectStore('captures').get(id))) as CaptureRecord | undefined) ?? null;

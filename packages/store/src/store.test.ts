@@ -83,6 +83,19 @@ describe('store', () => {
     await expect(store().put({ id: 'x' } as never)).rejects.toThrow();
   });
 
+  it('edits title and note without saving, and restores a deleted capture with its images', async () => {
+    const s = store();
+    await s.put(record('a'), { thumb, full: thumb });
+    const edited = (await s.update('a', { title: 'Hero CTA', note: 'Try this' }))!;
+    expect(edited.saved).toBe(false);
+    expect(edited.titleSource).toBe('user');
+    const imgs = (await s.images(['a'])).a!;
+    await s.delete('a');
+    await s.restore(edited, imgs);
+    expect((await s.get('a'))!.note).toBe('Try this');
+    expect((await s.images(['a'])).a!.full).toEqual(thumb);
+  });
+
   it('stores small settings', async () => {
     const s = store();
     await s.setMeta('profile', { level: 'student' });
