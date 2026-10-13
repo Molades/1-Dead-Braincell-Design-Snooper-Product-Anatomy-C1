@@ -3,7 +3,9 @@ import { Store, type CaptureImages } from '@pixelpeeper/store';
 import { exportText, FILE_NAMES, GROUPS, type Format, type Group, type Sources } from '../../components/direction';
 import type { Tab } from '../../components/lesson';
 import { compareView, homeView, ideaView, MAX_COMPARE, type Filter, type Thumbs } from '../../components/library-view';
+import { DEFAULT_LAYERS, viewerHTML, wireViewer, type Layer } from '../../components/viewer';
 import '../../components/overlay.css';
+import '../../components/viewer.css';
 import './library.css';
 
 /**
@@ -24,6 +26,9 @@ let tab: Tab = 'lesson';
 let sources: Sources = {};
 let format: Format = 'md';
 let toastTimer: ReturnType<typeof setTimeout> | undefined;
+let viewerLayers: Layer[] = [...DEFAULT_LAYERS];
+let viewerActual = false;
+let closeViewer: (() => void) | null = null;
 
 const dataUrl = (img: { base64: string; mediaType: string } | null | undefined) => (img ? `data:${img.mediaType};base64,${img.base64}` : undefined);
 
@@ -92,6 +97,67 @@ function wireFavicons() {
 async function refresh() { await load(); await render(); }
 
 // ---------------------------------------------------------------------------------------------
+// Capture viewer
+
+async function openViewer(id: string): Promise<void> {
+  const record = records.find((r) => r.id === id);
+  if (!record) return;
+  const images = (await store.images([id]))[id];
+  const src = dataUrl(images?.full) ?? dataUrl(images?.thumb);
+  if (!src) { toast('No screenshot for this capture.'); return; }
+  closeViewer?.();
+  const host = document.createElement('div');
+  document.body.append(host);
+  let cleanup: (() => void) | null = null;
+  const draw = () => {
+    host.innerHTML = viewerHTML({
+      title: record.titleSource === 'user' ? record.title : record.pattern,
+      subtitle: `${record.page.siteName} · ${record.page.pageName}`,
+      image: `<img src="${src}" alt="">`, annotations: record.annotations, analysis: record.analysis,
+      layers: viewerLayers, actual: viewerActual, canDownload: !!record.annotations,
+    });
+    cleanup?.();
+    cleanup = wireViewer(host, {
+      onLayers: (l) => { viewerLayers = l; },
+      onAction: (a) => {
+        if (a === 'close') closeViewer?.();
+        else if (a === 'zoom') { viewerActual = !viewerActual; draw(); }
+        else void downloadAnnotated(host, record.pattern);
+      },
+    });
+    host.querySelector<HTMLButtonElement>('[data-v="close"]')?.focus();
+  };
+  closeViewer = () => { cleanup?.(); host.remove(); closeViewer = null; document.body.style.overflow = ''; };
+  document.body.style.overflow = 'hidden';
+  draw();
+}
+
+/** Flatten the screenshot and the visible annotation layers into one PNG at the capture's resolution. */
+async function downloadAnnotated(host: HTMLElement, name: string): Promise<void> {
+  const img = host.querySelector<HTMLImageElement>('.v-frame > img');
+  const svg = host.querySelector<SVGSVGElement>('.v-svg');
+  if (!img || !svg) return;
+  const w = img.naturalWidth, h = img.naturalHeight;
+  // Inline computed styles so the standalone SVG renders like the page.
+  const clone = svg.cloneNode(true) as SVGSVGElement;
+  const src = [svg, ...svg.querySelectorAll('*')], dst = [clone, ...clone.querySelectorAll('*')];
+  const props = ['display', 'opacity', 'fill', 'stroke', 'stroke-width', 'stroke-dasharray', 'paint-order', 'stroke-linejoin', 'font', 'vector-effect'];
+  src.forEach((el, i) => { const cs = getComputedStyle(el); (dst[i] as SVGElement).setAttribute('style', props.map((p) => `${p}:${cs.getPropertyValue(p)}`).join(';')); });
+  clone.querySelectorAll('title').forEach((t) => t.remove());
+  clone.setAttribute('width', String(w));
+  clone.setAttribute('height', String(h));
+  clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+  const overlay = new Image();
+  overlay.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(new XMLSerializer().serializeToString(clone))}`;
+  await overlay.decode();
+  const canvas = Object.assign(document.createElement('canvas'), { width: w, height: h });
+  const ctx = canvas.getContext('2d')!;
+  ctx.drawImage(img, 0, 0, w, h);
+  ctx.drawImage(overlay, 0, 0, w, h);
+  canvas.toBlob((blob) => { if (blob) { const url = URL.createObjectURL(blob); Object.assign(document.createElement('a'), { href: url, download: `${name.replace(/[^\w\- ]+/g, '').trim() || 'capture'} — annotated.png` }).click(); setTimeout(() => URL.revokeObjectURL(url), 1000); } }, 'image/png');
+}
+
+// ---------------------------------------------------------------------------------------------
 // Actions
 
 async function keep(id: string) {
@@ -130,6 +196,7 @@ document.addEventListener('click', (e) => {
   if (!t) return;
   const d = t.dataset;
   if (d.filter) { filter = d.filter as Filter; void render(); return; }
+  if (d.view) { void openViewer(d.view); return; }
   if (d.keep) { void keep(d.keep); return; }
   if (d.delete) { void remove(d.delete); return; }
   if (d.tab) { tab = d.tab as Tab; void render(); return; }
@@ -186,12 +253,13 @@ document.addEventListener('input', (e) => {
 });
 
 document.addEventListener('keydown', (e) => {
+  if (closeViewer) { if (e.key === 'Escape') { e.preventDefault(); closeViewer(); } return; }
   const el = e.target as HTMLElement;
   if (e.key === 'Enter' && el.dataset.title !== undefined) (el as HTMLInputElement).blur();
   if (e.key === '/' && document.activeElement === document.body) { e.preventDefault(); app.querySelector<HTMLInputElement>('.search')?.focus(); }
 });
 
-window.addEventListener('hashchange', () => { tab = 'lesson'; window.scrollTo(0, 0); void render(); });
+window.addEventListener('hashchange', () => { closeViewer?.(); tab = 'lesson'; window.scrollTo(0, 0); void render(); });
 
 // The overlay saved or captured something in another tab: refresh unless the user is typing here.
 chrome.runtime.onMessage.addListener((msg: { type?: string }) => {

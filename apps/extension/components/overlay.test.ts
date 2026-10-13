@@ -98,6 +98,13 @@ describe('floating extension lifecycle', () => {
     expect(rec!.title).toBe('Primary call-to-action — Localhost · Plans and pricing');
     expect(rec!.hasImage).toBe(true);
     expect((await bg.store.images([rec!.id]))[rec!.id]!.thumb).toEqual(thumb);
+    expect(rec!.annotations?.version).toBe(1);
+    root.querySelector<HTMLButtonElement>('[data-action="view"]')!.click(); await settle(200);
+    expect(root.querySelector('.viewer')).not.toBeNull();
+    expect(root.querySelector('.v-svg')).not.toBeNull();
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    expect(root.querySelector('.viewer')).toBeNull();
+    expect(root.querySelector<HTMLElement>('.window')!.hidden).toBe(false);
   });
 
   it('opens the Library tab from the launcher, and on the saved capture from the lesson', async () => {

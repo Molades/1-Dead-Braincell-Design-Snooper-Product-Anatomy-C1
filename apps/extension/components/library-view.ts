@@ -2,6 +2,7 @@ import { evaluate } from '@pixelpeeper/rules';
 import type { CaptureRecord } from '@pixelpeeper/schema';
 import { compareRows, exportText, FORMAT_LABELS, GROUPS, type Format, type Sources } from './direction';
 import { esc, lessonTab, measurementsTab, rulesTab, tabs, type Tab } from './lesson';
+import { issueCount } from './viewer';
 
 /** Library tab screens: Home, Idea and Compare. Pure functions returning HTML. */
 
@@ -91,10 +92,10 @@ export function ideaView(s: IdeaState): string {
       <a class="back" href="#/">← Library</a>
       <input class="title-input" data-title value="${esc(r.title)}" aria-label="Title" spellcheck="false">
       <p class="muted">${esc(r.page.siteName)} · ${esc(r.page.pageName)} · ${r.scope === 'page' ? 'visible page' : `&lt;${esc(r.facts.structure.tag.value)}&gt;`} · captured ${when(r.createdAt)} · <a href="${esc(r.page.url)}" target="_blank" rel="noopener">Open source page ↗</a></p>
-      <div class="actions">${r.saved ? '<span class="saved-state">✓ Saved</span>' : `<button class="primary" data-keep="${esc(r.id)}">Save idea</button>`}${r.saved ? `<button data-toggle-compare="${esc(r.id)}" aria-pressed="${inCompare}">${inCompare ? '✓ In compare' : 'Add to compare'}</button>` : ''}<button data-export="${esc(r.id)}">Export</button><button class="danger" data-delete="${esc(r.id)}">Delete</button></div>
+      <div class="actions">${r.saved ? '<span class="saved-state">✓ Saved</span>' : `<button class="primary" data-keep="${esc(r.id)}">Save idea</button>`}${r.saved ? `<button data-toggle-compare="${esc(r.id)}" aria-pressed="${inCompare}">${inCompare ? '✓ In compare' : 'Add to compare'}</button>` : ''}${s.image ? `<button data-view="${esc(r.id)}">View annotated</button>` : ''}<button data-export="${esc(r.id)}">Export</button><button class="danger" data-delete="${esc(r.id)}">Delete</button></div>
     </div>
     <div class="idea-body">
-      <figure class="shot-big">${s.image ? `<img src="${s.image}" alt="Captured screenshot of ${esc(r.pattern)}">` : `<div class="no-shot">No screenshot was taken. Screenshots are captured when a lesson runs with an AI key.</div>`}<figcaption>What was analysed · ${esc(r.page.siteName)} · ${when(r.createdAt)}</figcaption></figure>
+      <figure class="shot-big">${s.image ? `<button class="shot-open" data-view="${esc(r.id)}" aria-label="Open full screen with measured annotations"><img src="${s.image}" alt="Captured screenshot of ${esc(r.pattern)}"><span class="shot-hint">View with measurements${issueCount(r.annotations) ? ` · ${issueCount(r.annotations)} issue${issueCount(r.annotations) > 1 ? 's' : ''}` : ''}</span></button>` : `<div class="no-shot">No screenshot was taken. Screenshots are captured when a lesson runs with an AI key.</div>`}<figcaption>What was analysed · ${esc(r.page.siteName)} · ${when(r.createdAt)}</figcaption></figure>
       <section class="lesson-col">
         ${tabs(s.tab, results, true)}
         <div class="panel" role="tabpanel">${body}</div>

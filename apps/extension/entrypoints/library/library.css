@@ -113,3 +113,7 @@ button.danger:hover { color: var(--fail); background: var(--fail-bg); border-col
 .tabs button { border: 0; border-bottom: 2px solid transparent; border-radius: 8px 8px 0 0; background: transparent; padding: 8px 12px; }
 .tabs button[aria-selected="true"] { border-bottom-color: var(--ink); }
 .err .row button, .panel button { border: 1px solid var(--line); }
+.shot-open { display: block; position: relative; width: 100%; padding: 0; border: 0; border-radius: 0; background: transparent; cursor: zoom-in; }
+.shot-open:hover { background: transparent; }
+.shot-hint { position: absolute; right: 10px; bottom: 10px; font-size: 12px; background: #252523e6; color: #fffefa; padding: 4px 10px; border-radius: 99px; opacity: 0; transition: opacity .12s; }
+.shot-open:hover .shot-hint, .shot-open:focus-visible .shot-hint { opacity: 1; }

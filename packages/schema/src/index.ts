@@ -239,6 +239,27 @@ export const StoredImage = z.object({
 export type StoredImage = z.infer<typeof StoredImage>;
 
 /**
+ * Layout inside a capture, for drawing measured annotations over the screenshot.
+ * Coordinates are CSS px relative to the captured frame's top-left. All values are Measured.
+ */
+const Box = z.object({ x: z.number(), y: z.number(), width: z.number(), height: z.number() });
+export const Annotations = z.object({
+  version: z.literal(1),
+  frame: z.object({ width: z.number(), height: z.number() }),
+  /** The selected element's border box and padding (top, right, bottom, left); null for page scope. */
+  box: z.object({ rect: Box, padding: z.tuple([z.number(), z.number(), z.number(), z.number()]) }).nullable(),
+  children: z.array(z.object({ rect: Box, label: z.string() })),
+  gaps: z.array(z.object({ x1: z.number(), y1: z.number(), x2: z.number(), y2: z.number(), value: z.number(), axis: z.enum(['x', 'y']) })),
+  text: z.array(z.object({
+    rect: Box, sample: z.string(), size: z.number(), weight: z.number(), lineHeight: z.number().nullable(),
+    color: z.string(), contrast: z.number().nullable(), aa: z.boolean().nullable(),
+  })),
+  targets: z.array(z.object({ rect: Box, label: z.string(), aa: z.boolean(), aaa: z.boolean() })),
+  swatches: z.array(z.object({ x: z.number(), y: z.number(), color: z.string(), role: z.enum(['background', 'text', 'border']) })),
+});
+export type Annotations = z.infer<typeof Annotations>;
+
+/**
  * Everything the user ran a lesson on. Unsaved records are "Recent"; saved ones are ideas.
  * Images live in a separate store under the same id.
  */
@@ -260,6 +281,8 @@ export const CaptureRecord = z.object({
   /** User authored. */
   note: z.string(),
   hasImage: z.boolean(),
+  /** Optional: captures made before annotations existed have none. */
+  annotations: Annotations.nullable().optional(),
 });
 export type CaptureRecord = z.infer<typeof CaptureRecord>;
 
