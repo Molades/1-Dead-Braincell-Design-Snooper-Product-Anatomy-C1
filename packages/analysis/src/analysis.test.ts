@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { measureElement } from '@pixelpeeper/measure';
 import { evaluate } from '@pixelpeeper/rules';
 import { Analysis, normalizeAnalysis, type Facts } from '@pixelpeeper/schema';
-import { analyze, AnalysisError, buildUserContent, factPaths, numbersInText, SYSTEM_PROMPT, validate, type ModelOutput } from './index';
+import { analyze, AnalysisError, buildUserContent, buildUserText, factPaths, numbersInText, SYSTEM_PROMPT, validate, type ModelOutput } from './index';
 
 function setup() {
   document.body.innerHTML = '<button id="t" style="color:#fff;background:#111;padding:12px 24px;font-size:16px;line-height:24px;border-radius:8px">Start trial</button>';
@@ -127,6 +127,18 @@ describe('prompt', () => {
     expect(text).toContain('wcag-1.4.3-contrast-minimum');
     expect(text).toContain('law-fitts');
     expect(text).not.toContain(facts.url);
+  });
+});
+
+describe('audience', () => {
+  it('adds the reader note to the user turn only, so the system prompt still caches', () => {
+    const { facts, results } = setup();
+    const student = buildUserText({ facts, results, scope: 'element', audience: 'student' });
+    const senior = buildUserText({ facts, results, scope: 'element', audience: 'senior' });
+    expect(student).toContain('design student');
+    expect(senior).toContain('Be terse');
+    expect(buildUserText({ facts, results, scope: 'element' })).not.toContain('READER:');
+    expect(SYSTEM_PROMPT).not.toContain('READER:');
   });
 });
 

@@ -6,6 +6,7 @@ export default defineContentScript({
   main(ctx) {
     const ui = createOverlay();
     const listener = (msg: { type: string }) => {
+      if (msg.type === 'pp:ping') return; // presence check from the background
       if (msg.type === 'pp:activate') ui.activate();
       if (msg.type === 'pp:start-pick') ui.pick();
       if (msg.type === 'pp:stop-pick') ui.deactivate();

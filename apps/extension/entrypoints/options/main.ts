@@ -33,6 +33,9 @@ app.innerHTML = `
     <div class="row"><button class="primary" type="submit">Save</button><button type="button" id="remove">Remove key</button></div>
     <p id="status" role="status"></p>
   </form>
+  <h2>Setup</h2>
+  <p>Change your goals and level, or walk through the introduction again.</p>
+  <div class="row"><button type="button" id="welcome">Run setup again</button></div>
   <h2>What is sent when you analyze</h2>
   <ul>
     <li>A screenshot of the selection you chose (only the visible part).</li>
@@ -78,6 +81,8 @@ document.getElementById('remove')!.addEventListener('click', async () => {
   await saveSettings(settings);
   render();
 });
+
+document.getElementById('welcome')!.addEventListener('click', () => { void chrome.runtime.sendMessage({ type: 'pp:open-welcome' }); });
 
 void loadSettings().then((s) => {
   settings = s;

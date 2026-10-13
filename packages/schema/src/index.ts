@@ -286,6 +286,20 @@ export const CaptureRecord = z.object({
 });
 export type CaptureRecord = z.infer<typeof CaptureRecord>;
 
+/** What the user told onboarding they want; stored locally, never sent except as lesson tone. */
+export const Goal = z.enum(['learn', 'library', 'accessibility', 'tokens']);
+export type Goal = z.infer<typeof Goal>;
+export const Level = z.enum(['student', 'practising', 'senior']);
+export type Level = z.infer<typeof Level>;
+export const Profile = z.object({
+  goals: z.array(Goal),
+  level: Level,
+  onboarded: z.boolean(),
+  coachmarksSeen: z.boolean(),
+});
+export type Profile = z.infer<typeof Profile>;
+export const DEFAULT_PROFILE: Profile = { goals: ['learn'], level: 'practising', onboarded: false, coachmarksSeen: false };
+
 /** Resolve a dotted path like "typography.fontSize" against a Facts object. */
 export function getFact(facts: Facts, path: string): unknown {
   return path.split('.').reduce<unknown>((acc, key) => (acc as Record<string, unknown> | undefined)?.[key], facts);

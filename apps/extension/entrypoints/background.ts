@@ -1,9 +1,9 @@
 import { analyze, AnalysisError } from '@pixelpeeper/analysis';
 import { evaluate } from '@pixelpeeper/rules';
-import { CaptureRecord, Facts, normalizeAnalysis, type StoredImage } from '@pixelpeeper/schema';
+import { CaptureRecord, DEFAULT_PROFILE, Facts, normalizeAnalysis, Profile, type StoredImage } from '@pixelpeeper/schema';
 import { Store, type ListQuery } from '@pixelpeeper/store';
 import { captureTitle, pageNameFrom, patternName, siteNameFromHost } from '@pixelpeeper/measure';
-import { activeKey, activeModel, loadSettings, PROVIDERS } from '../components/settings';
+import { activeKey, activeModel, loadSettings, PROVIDERS, type Provider } from '../components/settings';
 /** Long edge cap for the screenshot; larger images are downscaled before upload. */
 const MAX_EDGE = 1568;
 /** Long edge for the saved thumbnail shown in the lesson header and library. */
@@ -25,7 +25,11 @@ type Msg =
   | { type: 'pp:store:list'; query?: ListQuery }
   | { type: 'pp:store:delete'; id: string }
   | { type: 'pp:store:images'; ids: string[] }
-  | { type: 'pp:open-library'; id?: string; query?: string };
+  | { type: 'pp:open-library'; id?: string; query?: string }
+  | { type: 'pp:profile:get' }
+  | { type: 'pp:profile:set'; patch: Partial<Profile> }
+  | { type: 'pp:test-key'; provider: Provider; key: string }
+  | { type: 'pp:open-welcome' };
 
 
 function toBase64(buffer: ArrayBuffer): string {
@@ -83,6 +87,30 @@ async function openLibrary(id?: string, query?: string): Promise<void> {
   await chrome.storage.session.set({ [LIBRARY_TAB]: tab.id });
 }
 
+async function getProfile(): Promise<Profile> {
+  const stored = Profile.partial().safeParse(await store.getMeta('profile'));
+  return { ...DEFAULT_PROFILE, ...(stored.success ? stored.data : {}) };
+}
+
+/**
+ * Check a key without spending tokens: list the provider's models.
+ * Returns null when valid, otherwise a message for the user.
+ */
+async function testKey(provider: Provider, key: string): Promise<string | null> {
+  const res = provider === 'groq'
+    ? await fetch('https://api.groq.com/openai/v1/models', { headers: { Authorization: `Bearer ${key}` } })
+    : await fetch('https://api.anthropic.com/v1/models?limit=1', { headers: { 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' } });
+  if (res.ok) return null;
+  if (res.status === 401 || res.status === 403) return `${PROVIDERS[provider].label} rejected this key.`;
+  return `${PROVIDERS[provider].label} answered ${res.status}. Try again in a moment.`;
+}
+
+/** Make sure the page has a current content script (tabs opened before an update have none). */
+async function ensureContentScript(tabId: number): Promise<void> {
+  try { await chrome.tabs.sendMessage(tabId, { type: 'pp:ping' }); }
+  catch { await chrome.scripting.executeScript({ target: { tabId }, files: ['content-scripts/content.js'] }); }
+}
+
 /** Tell an open Library tab to refresh after the overlay changes the store. */
 const notifyLibrary = () => chrome.runtime.sendMessage({ type: 'pp:library:changed' }).catch(() => {});
 
@@ -104,7 +132,8 @@ async function handle(msg: Msg, sender: chrome.runtime.MessageSender): Promise<u
       const facts = Facts.parse(msg.facts);
       // Rules are recomputed here from the facts so the model sees exactly what the engine decided.
       const results = evaluate(facts, { scope: msg.scope });
-      const analysis = await analyze({ provider: settings.provider, model: activeModel(settings), apiKey: key, facts, results, image: msg.image, scope: msg.scope, signal: AbortSignal.timeout(180_000) });
+      const profile = await getProfile();
+      const analysis = await analyze({ provider: settings.provider, model: activeModel(settings), apiKey: key, audience: profile.level, facts, results, image: msg.image, scope: msg.scope, signal: AbortSignal.timeout(180_000) });
       return { analysis };
     }
     case 'pp:store:put': {
@@ -127,6 +156,19 @@ async function handle(msg: Msg, sender: chrome.runtime.MessageSender): Promise<u
       return { ok: true };
     case 'pp:open-library':
       await openLibrary(msg.id, msg.query);
+      return { ok: true };
+    case 'pp:profile:get':
+      return { profile: await getProfile() };
+    case 'pp:profile:set': {
+      const profile = Profile.parse({ ...(await getProfile()), ...msg.patch });
+      await store.setMeta('profile', profile);
+      return { profile };
+    }
+    case 'pp:test-key':
+      try { return { error: await testKey(msg.provider, msg.key.trim()) }; }
+      catch { return { error: `Could not reach ${PROVIDERS[msg.provider].label}. Check your connection.` }; }
+    case 'pp:open-welcome':
+      await chrome.tabs.create({ url: chrome.runtime.getURL('/welcome.html') });
       return { ok: true };
     case 'pp:store:images':
       return { images: await store.images(msg.ids) };
@@ -166,16 +208,24 @@ async function migrateLegacySaves(): Promise<void> {
 export default defineBackground(() => {
   void migrateLegacySaves().catch((err) => console.error('Pixel Peeper: migrating saved ideas failed', err));
 
+  // First install: open the welcome tab once.
+  chrome.runtime.onInstalled.addListener(({ reason }) => {
+    if (reason === 'install') void chrome.tabs.create({ url: chrome.runtime.getURL('/welcome.html') });
+  });
+
+  // Keyboard shortcut (default ⌥P / Alt+P): straight into pick mode on the current tab.
+  chrome.commands.onCommand.addListener(async (command, tab) => {
+    if (command !== 'pick' || !tab?.id) return;
+    try { await ensureContentScript(tab.id); await chrome.tabs.sendMessage(tab.id, { type: 'pp:start-pick' }); }
+    catch { await chrome.action.setBadgeText({ tabId: tab.id, text: '!' }); }
+  });
+
   chrome.action.onClicked.addListener(async (tab) => {
     if (!tab.id) return;
     try {
-      try {
-        await chrome.tabs.sendMessage(tab.id, { type: 'pp:activate' });
-      } catch {
-        // Tabs opened before install or update have no (or a stale) content script: inject a fresh one.
-        await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ['content-scripts/content.js'] });
-        await chrome.tabs.sendMessage(tab.id, { type: 'pp:activate' });
-      }
+      // Tabs opened before install or update have no (or a stale) content script: inject a fresh one.
+      await ensureContentScript(tab.id);
+      await chrome.tabs.sendMessage(tab.id, { type: 'pp:activate' });
       await chrome.action.setBadgeText({ tabId: tab.id, text: '' });
       await chrome.action.setTitle({ tabId: tab.id, title: 'Open Pixel Peeper' });
     } catch {

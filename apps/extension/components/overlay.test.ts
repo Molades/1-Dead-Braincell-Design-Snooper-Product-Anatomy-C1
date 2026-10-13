@@ -6,7 +6,8 @@ import { createOverlay } from './overlay';
 type Msg = { type: string; [k: string]: unknown };
 
 /** A stand-in for the background worker: real library store on an in-memory database. */
-function fakeBackground(opts: { hasKey?: boolean; thumb?: unknown; analysis?: unknown } = {}) {
+function fakeBackground(opts: { hasKey?: boolean; thumb?: unknown; analysis?: unknown; profile?: Record<string, unknown> } = {}) {
+  let profile = { goals: ['learn'], level: 'practising', onboarded: true, coachmarksSeen: true, ...opts.profile };
   const store = new Store(new IDBFactory());
   const calls: Msg[] = [];
   const handle = async (m: Msg): Promise<unknown> => {
@@ -20,9 +21,11 @@ function fakeBackground(opts: { hasKey?: boolean; thumb?: unknown; analysis?: un
       case 'pp:store:list': return { records: await store.list(m.query as never) };
       case 'pp:store:delete': await store.delete(m.id as string); return { ok: true };
       case 'pp:store:images': return { images: await store.images(m.ids as string[]) };
+      case 'pp:profile:get': return { profile };
+      case 'pp:profile:set': profile = { ...profile, ...(m.patch as object) }; return { profile };
     }
   };
-  return { store, calls, sendMessage: vi.fn(handle) };
+  return { store, calls, sendMessage: vi.fn(handle), profile: () => profile };
 }
 
 describe('floating extension lifecycle', () => {
@@ -162,6 +165,35 @@ describe('floating extension lifecycle', () => {
     (chrome.runtime as { id?: string }).id = undefined;
     select(); button('scan').click(); await settle(200);
     expect(root.querySelector('.feedback')!.textContent).toMatch(/Reload this page/);
+  });
+
+  it('shows coach marks once, on the first activation', async () => {
+    setup({ profile: { coachmarksSeen: false } });
+    ui.activate(); await settle(200);
+    const coachEl = root.querySelector<HTMLElement>('.coach')!;
+    expect(coachEl.hidden).toBe(false);
+    expect(coachEl.textContent).toContain('Get lesson');
+    button('coach-done').click(); await settle(100);
+    expect(coachEl.hidden).toBe(true);
+    expect(bg.profile().coachmarksSeen).toBe(true);
+  });
+
+  it('puts accessibility first for users who only chose that goal', async () => {
+    setup({ profile: { goals: ['accessibility'] } });
+    ui.activate(); await settle(100);
+    select(); button('scan').click(); await settle();
+    expect(root.querySelector('[role="tab"][aria-selected="true"]')!.textContent).toContain('Rules');
+  });
+
+  it('summarises rule failures above the lesson for the accessibility goal, and saves with S', async () => {
+    const analysis = { version: 2, scope: 'element', headline: null, role: null, technique: null, works: [], watch: [], tradeoff: null, steal: [], laws: [], visualOnly: [], vocabulary: [], rejected: [], modelInfo: { provider: 'groq', model: 'm' }, rulesLibraryVersion: '0.1.0', createdAt: '2026-10-13T00:00:00Z' };
+    setup({ hasKey: true, analysis, thumb: { base64: 'AAAA', mediaType: 'image/jpeg', width: 4, height: 3 }, profile: { goals: ['learn', 'accessibility', 'library'] } });
+    ui.activate(); await settle(100);
+    select(); button('scan').click(); await settle(3000);
+    expect(root.querySelector('.a11y-sum')).not.toBeNull();
+    expect(root.querySelector('[data-action="save"] kbd')!.textContent).toBe('S');
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 's' })); await settle(300);
+    expect(await bg.store.list({ saved: true })).toHaveLength(1);
   });
 
   it('exports Markdown and CSS with actual line breaks', async () => {

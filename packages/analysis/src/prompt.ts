@@ -1,5 +1,5 @@
 import type Anthropic from '@anthropic-ai/sdk';
-import type { Facts, RuleResult } from '@pixelpeeper/schema';
+import type { Facts, Level, RuleResult } from '@pixelpeeper/schema';
 import { JUDGMENT_RULES, RULES_VERSION } from '@pixelpeeper/rules';
 
 /**
@@ -38,6 +38,8 @@ export const COMPACT_SYSTEM_PROMPT = systemPrompt({ library: false });
 
 export interface PromptInput {
   facts: Facts;
+  /** Who is reading; changes depth and tone, never the facts. */
+  audience?: Level;
   results: RuleResult[];
   image: { base64: string; mediaType: 'image/png' | 'image/jpeg' };
   scope: 'element' | 'page';
@@ -59,12 +61,20 @@ function compactFacts(facts: Facts): unknown {
 }
 
 /** The text half of the user turn; providers attach the screenshot their own way. */
-export function buildUserText({ facts, results, scope }: Omit<PromptInput, 'image'>, { compact = false }: { compact?: boolean } = {}): string {
+/** Per-request reader note. Kept in the user turn so the cached system prompt stays identical. */
+export const AUDIENCE: Record<Level, string> = {
+  student: 'READER: a design student. Explain any design term in plain words the first time you use it. Prefer one concrete example over abstraction. Keep each sentence short.',
+  practising: 'READER: a practising designer. Use standard design vocabulary without defining it. Be specific and practical.',
+  senior: 'READER: a senior designer or design lead. Be terse. Lead with trade-offs, edge cases and what is unusual here. Skip definitions and obvious points.',
+};
+
+export function buildUserText({ facts, results, scope, audience }: Omit<PromptInput, 'image'>, { compact = false }: { compact?: boolean } = {}): string {
   const measured = results
     .filter((r) => r.label === 'measured' && r.status !== 'not-applicable')
     .map(({ ruleId, status, message, actual, threshold, criterion }) => (compact ? { ruleId, status, message } : { ruleId, status, message, actual, threshold, criterion }));
   const queued = results.filter((r) => r.status === 'needs-judgment').map((r) => ({ ruleId: r.ruleId, question: r.message, evidence: r.evidence }));
   return [
+    ...(audience ? [AUDIENCE[audience]] : []),
     `SCOPE: ${scope}`,
     `FACTS:\n${JSON.stringify(compactFacts(facts))}`,
     `MEASURED RULE RESULTS:\n${JSON.stringify(measured)}`,

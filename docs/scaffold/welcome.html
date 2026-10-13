@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+  <head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><title>Welcome to Pixel Peeper</title></head>
+  <body>
+    <main id="app" aria-live="polite"></main>
+    <script type="module">
+      // Preview only: stand-ins for extension APIs. A key starting "gsk_good" passes the test.
+      let profile = { goals: ['learn'], level: 'practising', onboarded: false, coachmarksSeen: false };
+      window.chrome = {
+        runtime: { id: 'preview', sendMessage: async (m) => {
+          if (m.type === 'pp:profile:get') return { profile };
+          if (m.type === 'pp:profile:set') { profile = { ...profile, ...m.patch }; return { profile }; }
+          if (m.type === 'pp:test-key') { await new Promise((r) => setTimeout(r, 600)); return { error: m.key.startsWith('gsk_good') ? null : 'Groq rejected this key.' }; }
+          return { ok: true };
+        } },
+        commands: { getAll: async () => [{ name: 'pick', shortcut: '⌥P' }] },
+        storage: { local: {
+          get: async (keys) => Object.fromEntries([].concat(keys).map((k) => [k, JSON.parse(localStorage.getItem(k) ?? 'null')]).filter(([, v]) => v !== null)),
+          set: async (o) => Object.entries(o).forEach(([k, v]) => localStorage.setItem(k, JSON.stringify(v))),
+          remove: async (keys) => [].concat(keys).forEach((k) => localStorage.removeItem(k)),
+        } },
+      };
+      await import('../../apps/extension/entrypoints/welcome/main.ts');
+    </script>
+  </body>
+</html>
