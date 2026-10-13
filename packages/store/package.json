@@ -1,0 +1,10 @@
+{
+  "name": "@pixelpeeper/store",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "dependencies": { "@pixelpeeper/schema": "*" },
+  "devDependencies": { "@pixelpeeper/measure": "*", "fake-indexeddb": "^6.0.0" }
+}

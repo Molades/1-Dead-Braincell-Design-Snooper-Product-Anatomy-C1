@@ -215,6 +215,54 @@ export function normalizeAnalysis(input: unknown): Analysis | null {
   return parsed.success ? parsed.data : null;
 }
 
+/** Where a capture came from. Read from the page's own markup (title, meta tags, URL). */
+export const PageInfo = z.object({
+  url: z.string(),
+  host: z.string(),
+  path: z.string(),
+  /** document.title as the page declares it. */
+  documentTitle: z.string(),
+  /** og:site_name, application-name, or a name derived from the host. */
+  siteName: z.string(),
+  /** The page's own name with the site name removed, e.g. "Pricing". */
+  pageName: z.string(),
+  favicon: z.string().nullable(),
+});
+export type PageInfo = z.infer<typeof PageInfo>;
+
+export const StoredImage = z.object({
+  base64: z.string(),
+  mediaType: z.enum(['image/jpeg', 'image/png']),
+  width: z.number(),
+  height: z.number(),
+});
+export type StoredImage = z.infer<typeof StoredImage>;
+
+/**
+ * Everything the user ran a lesson on. Unsaved records are "Recent"; saved ones are ideas.
+ * Images live in a separate store under the same id.
+ */
+export const CaptureRecord = z.object({
+  id: z.string(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+  scope: z.enum(['element', 'page']),
+  page: PageInfo,
+  facts: Facts,
+  analysis: Analysis.nullable(),
+  /** Short name of what was picked, e.g. "Plan call-to-action" or "Button". */
+  pattern: z.string(),
+  title: z.string(),
+  /** "user" once the user edits the title; auto titles are then left alone. */
+  titleSource: z.enum(['auto', 'user']),
+  saved: z.boolean(),
+  savedAt: z.string().nullable(),
+  /** User authored. */
+  note: z.string(),
+  hasImage: z.boolean(),
+});
+export type CaptureRecord = z.infer<typeof CaptureRecord>;
+
 /** Resolve a dotted path like "typography.fontSize" against a Facts object. */
 export function getFact(facts: Facts, path: string): unknown {
   return path.split('.').reduce<unknown>((acc, key) => (acc as Record<string, unknown> | undefined)?.[key], facts);

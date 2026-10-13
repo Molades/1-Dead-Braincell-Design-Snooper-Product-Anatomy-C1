@@ -1,6 +1,8 @@
 import { analyze, AnalysisError } from '@pixelpeeper/analysis';
 import { evaluate } from '@pixelpeeper/rules';
-import { Facts } from '@pixelpeeper/schema';
+import { CaptureRecord, Facts, normalizeAnalysis, type StoredImage } from '@pixelpeeper/schema';
+import { Store, type ListQuery } from '@pixelpeeper/store';
+import { captureTitle, pageNameFrom, patternName, siteNameFromHost } from '@pixelpeeper/measure';
 import { activeKey, activeModel, loadSettings, PROVIDERS } from '../components/settings';
 /** Long edge cap for the screenshot; larger images are downscaled before upload. */
 const MAX_EDGE = 1568;
@@ -9,12 +11,20 @@ const THUMB_EDGE = 640;
 
 type Rect = { x: number; y: number; width: number; height: number };
 type Image = { base64: string; mediaType: 'image/png' };
-type Thumb = { base64: string; mediaType: 'image/jpeg'; width: number; height: number };
+type Thumb = StoredImage;
+
+const store = new Store();
 type Msg =
   | { type: 'pp:status' }
   | { type: 'pp:open-options' }
   | { type: 'pp:capture'; rect: Rect; dpr: number }
-  | { type: 'pp:analyze'; facts: unknown; scope: 'element' | 'page'; image: Image };
+  | { type: 'pp:analyze'; facts: unknown; scope: 'element' | 'page'; image: Image }
+  | { type: 'pp:store:put'; record: unknown; images?: { thumb: Thumb | null; full: Thumb | null } }
+  | { type: 'pp:store:save'; id: string; title?: string; note?: string }
+  | { type: 'pp:store:get'; id: string }
+  | { type: 'pp:store:list'; query?: ListQuery }
+  | { type: 'pp:store:delete'; id: string }
+  | { type: 'pp:store:images'; ids: string[] };
 
 
 function toBase64(buffer: ArrayBuffer): string {
@@ -25,7 +35,7 @@ function toBase64(buffer: ArrayBuffer): string {
 }
 
 /** Capture the visible tab and crop to the selection's visible bounds: full size for the model, a JPEG thumbnail for display. */
-async function capture(windowId: number, rect: Rect, dpr: number): Promise<{ image: Image; thumb: Thumb }> {
+async function capture(windowId: number, rect: Rect, dpr: number): Promise<{ image: Image; thumb: Thumb; full: Thumb }> {
   const dataUrl = await chrome.tabs.captureVisibleTab(windowId, { format: 'png' });
   const bitmap = await createImageBitmap(await (await fetch(dataUrl)).blob());
   const sx = Math.max(0, Math.round(rect.x * dpr)), sy = Math.max(0, Math.round(rect.y * dpr));
@@ -42,8 +52,15 @@ async function capture(windowId: number, rect: Rect, dpr: number): Promise<{ ima
   ctx.fillRect(0, 0, small.width, small.height);
   ctx.drawImage(bitmap, sx, sy, sw, sh, 0, 0, small.width, small.height);
   const thumbBlob = await small.convertToBlob({ type: 'image/jpeg', quality: 0.82 });
+  // Full-resolution copy for the capture viewer (same pixels the model saw, as JPEG).
+  const fullCtx = canvas.getContext('2d')!;
+  fullCtx.globalCompositeOperation = 'destination-over';
+  fullCtx.fillStyle = '#ffffff';
+  fullCtx.fillRect(0, 0, canvas.width, canvas.height);
+  const fullBlob = await canvas.convertToBlob({ type: 'image/jpeg', quality: 0.85 });
   return {
     image: { base64: toBase64(await blob.arrayBuffer()), mediaType: 'image/png' },
+    full: { base64: toBase64(await fullBlob.arrayBuffer()), mediaType: 'image/jpeg', width: canvas.width, height: canvas.height },
     thumb: { base64: toBase64(await thumbBlob.arrayBuffer()), mediaType: 'image/jpeg', width: small.width, height: small.height },
   };
 }
@@ -69,10 +86,55 @@ async function handle(msg: Msg, sender: chrome.runtime.MessageSender): Promise<u
       const analysis = await analyze({ provider: settings.provider, model: activeModel(settings), apiKey: key, facts, results, image: msg.image, scope: msg.scope, signal: AbortSignal.timeout(180_000) });
       return { analysis };
     }
+    case 'pp:store:put':
+      return { record: await store.put(CaptureRecord.parse(msg.record), msg.images) };
+    case 'pp:store:save':
+      return { record: await store.save(msg.id, { title: msg.title, note: msg.note }) };
+    case 'pp:store:get':
+      return { record: await store.get(msg.id) };
+    case 'pp:store:list':
+      return { records: await store.list(msg.query) };
+    case 'pp:store:delete':
+      await store.delete(msg.id);
+      return { ok: true };
+    case 'pp:store:images':
+      return { images: await store.images(msg.ids) };
   }
 }
 
+/**
+ * One-time move of ideas saved by earlier versions (chrome.storage list + separate thumbnail keys)
+ * into the library database. Old keys are removed only after every item is stored.
+ */
+const LEGACY_LIST = 'pixelpeeper.saved.v1';
+async function migrateLegacySaves(): Promise<void> {
+  if (await store.getMeta('migrated.saved.v1')) return;
+  const data = await chrome.storage.local.get(LEGACY_LIST);
+  const items = Array.isArray(data[LEGACY_LIST]) ? (data[LEGACY_LIST] as { id: string; scope?: string; facts: unknown; analysis?: unknown; shot?: string }[]) : [];
+  const shotKeys = items.map((i) => i.shot).filter((k): k is string => !!k);
+  const shots = shotKeys.length ? await chrome.storage.local.get(shotKeys) : {};
+  for (const item of items) {
+    const facts = Facts.safeParse(item.facts);
+    if (!facts.success) continue;
+    const url = new URL(facts.data.url);
+    const siteName = siteNameFromHost(url.hostname);
+    const page = { url: url.href, host: url.hostname, path: url.pathname, documentTitle: '', siteName, pageName: pageNameFrom('', siteName, url.pathname), favicon: null };
+    const scope = item.scope === 'page' ? 'page' : 'element';
+    const analysis = normalizeAnalysis(item.analysis);
+    const pattern = patternName(facts.data, scope, analysis?.role?.title);
+    const thumb = item.shot ? (shots[item.shot] as Thumb | undefined) ?? null : null;
+    await store.put({
+      id: `legacy:${item.id}`, createdAt: facts.data.capturedAt, updatedAt: facts.data.capturedAt, scope, page, facts: facts.data, analysis,
+      pattern, title: captureTitle(pattern, page), titleSource: 'auto', saved: true, savedAt: facts.data.capturedAt, note: '', hasImage: !!thumb,
+    }, thumb ? { thumb, full: null } : undefined);
+  }
+  await store.setMeta('migrated.saved.v1', true);
+  await chrome.storage.local.remove([LEGACY_LIST, ...shotKeys]);
+}
+
 export default defineBackground(() => {
+  void migrateLegacySaves().catch((err) => console.error('Pixel Peeper: migrating saved ideas failed', err));
+
   chrome.action.onClicked.addListener(async (tab) => {
     if (!tab.id) return;
     try {

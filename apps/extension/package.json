@@ -13,7 +13,8 @@
     "@pixelpeeper/analysis": "*",
     "@pixelpeeper/measure": "*",
     "@pixelpeeper/rules": "*",
-    "@pixelpeeper/schema": "*"
+    "@pixelpeeper/schema": "*",
+    "@pixelpeeper/store": "*"
   },
   "devDependencies": {
     "@types/chrome": "^0.0.300",

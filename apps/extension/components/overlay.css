@@ -32,3 +32,7 @@
 .lesson-head.expanded .shot{order:3;width:100%;height:auto;cursor:zoom-out}.lesson-head.expanded .shot canvas{height:auto;max-height:320px;object-fit:contain;background:repeating-conic-gradient(#f1f0ea 0 25%,#fff 0 50%) 0 0/12px 12px}
 .lib-thumb{flex:none;width:56px;height:42px;object-fit:contain;border-radius:6px;border:1px solid #deded5;background:#fff;margin-top:2px}
 @media(prefers-reduced-motion:reduce){.shot canvas{transition:none}}
+.lib-h{display:flex;gap:8px;align-items:baseline;margin:16px 0 4px;font:600 11px/1.4 system-ui;text-transform:uppercase;letter-spacing:.06em;color:#62625d}.lib-h .muted{text-transform:none;letter-spacing:0;font-weight:400}
+.saved-item{align-items:center}.saved-item .open{flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start;text-align:left;padding:4px 6px}.saved-item .open strong{font-size:13px}.saved-item .open .muted{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.saved-item .small{font-size:11px;padding:6px 8px;color:#62625d}.saved-item .del:hover{color:#9b2c1f;background:#fde8e4}.lib-thumb.empty{display:inline-block;background:repeating-linear-gradient(45deg,#f1f0ea 0 6px,#fff 0 12px)}
+.saved-state{color:#216659;font-weight:600}
