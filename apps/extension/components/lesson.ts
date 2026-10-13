@@ -157,7 +157,7 @@ export function measurementsTab(f: Facts, scope: 'element' | 'page'): string {
     <h4>Color</h4>${rows(['color.text', 'color.background', 'color.contrast', 'color.opacity'])}
     <h4>Spacing</h4>${rows(['spacing.padding', 'spacing.margin', 'spacing.gap', 'spacing.scaleBase'])}
     <h4>Size & shape</h4>${rows(['size.width', 'size.height', 'shape.borderRadius', 'shape.borderWidth', 'shape.boxShadow'])}
-    <h4>Layout & structure</h4>${rows(['layout.display', 'layout.flexDirection', 'structure.tag', 'structure.componentType', 'structure.role', 'consistency.sameStyleCount'])}
+    <h4>Layout & structure</h4>${rows(['layout.display', 'layout.flexDirection', 'structure.tag', 'structure.componentType', ...(f.structure.role.value ? ['structure.role'] : []), 'consistency.sameStyleCount'])}
     ${scope === 'page' ? '<p class="muted">Page scope measures the root element and captures only the visible viewport. Page-wide palette and type scale are not built yet.</p>' : ''}`;
 }
 
