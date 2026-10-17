@@ -184,6 +184,11 @@ const ERRORS: Record<string, { title: string; actions: ('retry' | 'settings' | '
   refused: { title: 'The model declined this selection', actions: ['pick'] },
   capture: { title: "Couldn't capture the selection", actions: ['retry', 'pick'] },
   gone: { title: 'The selection is no longer on the page', actions: ['pick'] },
+  quota: { title: 'Today’s lessons are used up', actions: ['pick'] },
+  paused: { title: 'Lessons are paused for a moment', actions: ['retry'] },
+  busy: { title: 'Lessons are busy right now', actions: ['retry'] },
+  'too-many-installs': { title: 'Too many new installs from this network', actions: ['retry'] },
+  server: { title: 'Something went wrong on our side', actions: ['retry'] },
 };
 
 export function errorCard(e: LessonError, now: number): string {

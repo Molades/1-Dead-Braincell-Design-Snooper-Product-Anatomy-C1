@@ -10,7 +10,8 @@ import { errorCard, lessonTab, measurementsTab, noKeyCard, placeWindow, progress
 
 /** Ideas and Recent captures come from the library database in the background worker. */
 type Saved = CaptureRecord;
-type Image = { base64: string; mediaType: 'image/png' };
+type Image = { base64: string; mediaType: 'image/jpeg' | 'image/png' };
+type Quota = { limit: number; used: number; remaining: number; resetAt: string };
 type Thumb = StoredImage;
 type Images = { thumb: Thumb | null; full: Thumb | null };
 /** Messages go to the background worker, which holds the API key; the key never enters this script. */
@@ -43,7 +44,7 @@ export function createOverlay() {
   document.documentElement.append(host); host.hidden = true;
   let active=false,picking=false,selected:Element|null=null,facts:Facts|null=null,scope:'element'|'page'='element';
   let analysis:Analysis|null=null,lessonError:LessonError|null=null,lastImage:Image|null=null,hasKey=false,interpreting=false,hovered:Element|null=null;
-  let profile:Profile={...DEFAULT_PROFILE};
+  let profile:Profile={...DEFAULT_PROFILE},quota:Quota|null=null;
   let annotations:Annotations|null=null,viewerLayers:Layer[]=[...DEFAULT_LAYERS],viewerActual=false,closeViewer:(()=>void)|null=null;
   let rawTarget:Element|null=null,selectedRaw:Element|null=null,crumbs:Element[]=[],siteIdeas=0;
   let tab:Tab='lesson',step=0,stepStart=0,ticker:ReturnType<typeof setInterval>|undefined,userPlaced=false;
@@ -112,9 +113,9 @@ export function createOverlay() {
       if(version!==run||destroyed)return;if(!shot?.image){lessonError={code:'capture',message:shot?.error??'The screenshot failed. Scroll the selection fully into view and retry.'};finish();return;}lastImage=shot.image;capture=shot.thumb??null;full=shot.full??null;}
     step=2;render();await frame();if(version!==run||destroyed)return;
     step=3;stepStart=Date.now();interpreting=true;q('.scan').hidden=true;render();tick();
-    const res=await ask<{analysis?:unknown;error?:string;code?:string;retryAfter?:number}>({type:'pp:analyze',facts,scope,image:lastImage});if(version!==run||destroyed)return;
+    const res=await ask<{analysis?:unknown;error?:string;code?:string;retryAfter?:number;quota?:Quota}>({type:'pp:analyze',facts,scope,image:lastImage});if(res?.quota)quota=res.quota;if(version!==run||destroyed)return;
     interpreting=false;const a=normalizeAnalysis(res?.analysis);
-    if(a)analysis=a;else lessonError={code:res?.code,message:res?.error??'The lesson did not arrive. Retry; your measurements are kept.',retryAt:res?.retryAfter?Date.now()+res.retryAfter*1000:undefined};
+    if(a)analysis=a;else lessonError={code:res?.code,message:res?.code==='quota'&&quota?`You’ve used all ${quota.limit} of today’s lessons. They reset at ${new Date(quota.resetAt).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})}. Measurements, rules and the viewer still work.`:res?.error??'The lesson did not arrive. Retry; your measurements are kept.',retryAt:res?.retryAfter?Date.now()+res.retryAfter*1000:undefined};
     finish();}
   function show(body:string,footer:string,wide=false){q('.body').innerHTML=body;q('.foot').innerHTML=footer;q('.window').classList.toggle('wide',wide);if(wide)Object.assign(q('.window').style,{left:'',top:'',right:'',bottom:'',maxHeight:''});q('.window').hidden=false;menu(false);void hydrate();}
   /** Draw thumbnails with canvas: unlike <img>, it is not blocked by a page's image CSP. */
@@ -136,7 +137,7 @@ export function createOverlay() {
     let body:string;
     if(tab==='rules'&&f)body=rulesTab(results,scope);
     else if(tab==='measurements'&&f)body=measurementsTab(f,scope);
-    else if(analysis&&f)body=a11ySummary(results)+lessonTab(analysis,f,results);
+    else if(analysis&&f)body=a11ySummary(results)+lessonTab(analysis,f,results)+(quota?`<p class="quota">${quota.remaining} of ${quota.limit} lessons left today</p>`:'');
     else if(lessonError)body=errorCard(lessonError,Date.now());
     else if(phase==='scanning')body=progress(step,Math.round((Date.now()-stepStart)/1000),hasKey);
     else if(!hasKey)body=noKeyCard();

@@ -6,7 +6,7 @@ import { createOverlay } from './overlay';
 type Msg = { type: string; [k: string]: unknown };
 
 /** A stand-in for the background worker: real library store on an in-memory database. */
-function fakeBackground(opts: { hasKey?: boolean; thumb?: unknown; analysis?: unknown; profile?: Record<string, unknown> } = {}) {
+function fakeBackground(opts: { hasKey?: boolean; thumb?: unknown; analysis?: unknown; profile?: Record<string, unknown>; analyzeReply?: unknown } = {}) {
   let profile = { goals: ['learn'], level: 'practising', onboarded: true, coachmarksSeen: true, ...opts.profile };
   const store = new Store(new IDBFactory());
   const calls: Msg[] = [];
@@ -15,7 +15,7 @@ function fakeBackground(opts: { hasKey?: boolean; thumb?: unknown; analysis?: un
     switch (m.type) {
       case 'pp:status': return { hasKey: !!opts.hasKey };
       case 'pp:capture': return { image: { base64: 'BBBB', mediaType: 'image/png' }, thumb: opts.thumb, full: opts.thumb };
-      case 'pp:analyze': return { analysis: opts.analysis };
+      case 'pp:analyze': return opts.analyzeReply ?? { analysis: opts.analysis };
       case 'pp:store:put': return { record: await store.put(m.record as never, m.images as never) };
       case 'pp:store:save': return { record: await store.save(m.id as string) };
       case 'pp:store:list': return { records: await store.list(m.query as never) };
@@ -194,6 +194,24 @@ describe('floating extension lifecycle', () => {
     expect(root.querySelector('[data-action="save"] kbd')!.textContent).toBe('S');
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 's' })); await settle(300);
     expect(await bg.store.list({ saved: true })).toHaveLength(1);
+  });
+
+  it('explains when today’s lessons are used up, with the local reset time, and keeps measurements', async () => {
+    const quota = { limit: 10, used: 10, remaining: 0, resetAt: '2026-10-15T00:00:00.000Z' };
+    setup({ hasKey: true, thumb: { base64: 'AAAA', mediaType: 'image/jpeg', width: 4, height: 3 }, analyzeReply: { error: 'Used up', code: 'quota', quota } });
+    select(); button('scan').click(); await settle(3000);
+    const card = root.querySelector('.err')!.textContent!;
+    expect(card).toContain('Today’s lessons are used up');
+    expect(card).toContain('all 10 of today’s lessons');
+    expect(root.querySelector('[data-action="retry"]')).toBeNull();
+    expect(root.querySelector('[data-tab="measurements"]')!.hasAttribute('disabled')).toBe(false);
+  });
+
+  it('shows how many lessons are left after a lesson', async () => {
+    const analysis = { version: 2, scope: 'element', headline: null, role: null, technique: null, works: [], watch: [], tradeoff: null, steal: [], laws: [], visualOnly: [], vocabulary: [], rejected: [], modelInfo: { provider: 'groq', model: 'm' }, rulesLibraryVersion: '0.1.0', createdAt: '2026-10-13T00:00:00Z' };
+    setup({ hasKey: true, thumb: { base64: 'AAAA', mediaType: 'image/jpeg', width: 4, height: 3 }, analyzeReply: { analysis, quota: { limit: 10, used: 3, remaining: 7, resetAt: '2026-10-15T00:00:00.000Z' } } });
+    select(); button('scan').click(); await settle(3000);
+    expect(root.querySelector('.quota')!.textContent).toBe('7 of 10 lessons left today');
   });
 
   it('exports Markdown and CSS with actual line breaks', async () => {

@@ -1,16 +1,14 @@
-import { analyze, AnalysisError, compareIdeas } from '@pixelpeeper/analysis';
-import { evaluate } from '@pixelpeeper/rules';
 import { CaptureRecord, DEFAULT_PROFILE, Facts, normalizeAnalysis, Profile, type StoredImage } from '@pixelpeeper/schema';
 import { Store, type ListQuery } from '@pixelpeeper/store';
 import { captureTitle, pageNameFrom, patternName, siteNameFromHost } from '@pixelpeeper/measure';
-import { activeKey, activeModel, loadSettings, PROVIDERS, type Provider } from '../components/settings';
+import { callService, lastQuota, ServiceError, type Quota } from '../components/service';
 /** Long edge cap for the screenshot; larger images are downscaled before upload. */
 const MAX_EDGE = 1568;
 /** Long edge for the saved thumbnail shown in the lesson header and library. */
 const THUMB_EDGE = 640;
 
 type Rect = { x: number; y: number; width: number; height: number };
-type Image = { base64: string; mediaType: 'image/png' };
+type Image = { base64: string; mediaType: 'image/jpeg' | 'image/png' };
 type Thumb = StoredImage;
 
 const store = new Store();
@@ -28,7 +26,7 @@ type Msg =
   | { type: 'pp:open-library'; id?: string; query?: string }
   | { type: 'pp:profile:get' }
   | { type: 'pp:profile:set'; patch: Partial<Profile> }
-  | { type: 'pp:test-key'; provider: Provider; key: string }
+  | { type: 'pp:quota' }
   | { type: 'pp:open-welcome' }
   | { type: 'pp:compare'; ids: string[]; mode: 'readAcross' | 'rationale'; direction?: string; extraNumbers?: number[] };
 
@@ -42,6 +40,7 @@ function toBase64(buffer: ArrayBuffer): string {
 
 /** Capture the visible tab and crop to the selection's visible bounds: full size for the model, a JPEG thumbnail for display. */
 async function capture(windowId: number, rect: Rect, dpr: number): Promise<{ image: Image; thumb: Thumb; full: Thumb }> {
+  // One JPEG for both the model and the viewer: small enough for the API's request limit.
   const dataUrl = await chrome.tabs.captureVisibleTab(windowId, { format: 'png' });
   const bitmap = await createImageBitmap(await (await fetch(dataUrl)).blob());
   const sx = Math.max(0, Math.round(rect.x * dpr)), sy = Math.max(0, Math.round(rect.y * dpr));
@@ -49,8 +48,10 @@ async function capture(windowId: number, rect: Rect, dpr: number): Promise<{ ima
   if (sw < 2 || sh < 2) throw new Error('The selection is not visible on screen. Scroll it into view and try again.');
   const scale = Math.min(1, MAX_EDGE / Math.max(sw, sh));
   const canvas = new OffscreenCanvas(Math.round(sw * scale), Math.round(sh * scale));
-  canvas.getContext('2d')!.drawImage(bitmap, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
-  const blob = await canvas.convertToBlob({ type: 'image/png' });
+  const main = canvas.getContext('2d')!;
+  main.fillStyle = '#ffffff'; // JPEG has no alpha
+  main.fillRect(0, 0, canvas.width, canvas.height);
+  main.drawImage(bitmap, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
   const t = Math.min(1, THUMB_EDGE / Math.max(sw, sh));
   const small = new OffscreenCanvas(Math.max(1, Math.round(sw * t)), Math.max(1, Math.round(sh * t)));
   const ctx = small.getContext('2d')!;
@@ -58,15 +59,11 @@ async function capture(windowId: number, rect: Rect, dpr: number): Promise<{ ima
   ctx.fillRect(0, 0, small.width, small.height);
   ctx.drawImage(bitmap, sx, sy, sw, sh, 0, 0, small.width, small.height);
   const thumbBlob = await small.convertToBlob({ type: 'image/jpeg', quality: 0.82 });
-  // Full-resolution copy for the capture viewer (same pixels the model saw, as JPEG).
-  const fullCtx = canvas.getContext('2d')!;
-  fullCtx.globalCompositeOperation = 'destination-over';
-  fullCtx.fillStyle = '#ffffff';
-  fullCtx.fillRect(0, 0, canvas.width, canvas.height);
-  const fullBlob = await canvas.convertToBlob({ type: 'image/jpeg', quality: 0.85 });
+  const fullBlob = await canvas.convertToBlob({ type: 'image/jpeg', quality: 0.88 });
+  const full = { base64: toBase64(await fullBlob.arrayBuffer()), mediaType: 'image/jpeg' as const, width: canvas.width, height: canvas.height };
   return {
-    image: { base64: toBase64(await blob.arrayBuffer()), mediaType: 'image/png' },
-    full: { base64: toBase64(await fullBlob.arrayBuffer()), mediaType: 'image/jpeg', width: canvas.width, height: canvas.height },
+    image: { base64: full.base64, mediaType: 'image/jpeg' },
+    full,
     thumb: { base64: toBase64(await thumbBlob.arrayBuffer()), mediaType: 'image/jpeg', width: small.width, height: small.height },
   };
 }
@@ -93,19 +90,6 @@ async function getProfile(): Promise<Profile> {
   return { ...DEFAULT_PROFILE, ...(stored.success ? stored.data : {}) };
 }
 
-/**
- * Check a key without spending tokens: list the provider's models.
- * Returns null when valid, otherwise a message for the user.
- */
-async function testKey(provider: Provider, key: string): Promise<string | null> {
-  const res = provider === 'groq'
-    ? await fetch('https://api.groq.com/openai/v1/models', { headers: { Authorization: `Bearer ${key}` } })
-    : await fetch('https://api.anthropic.com/v1/models?limit=1', { headers: { 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' } });
-  if (res.ok) return null;
-  if (res.status === 401 || res.status === 403) return `${PROVIDERS[provider].label} rejected this key.`;
-  return `${PROVIDERS[provider].label} answered ${res.status}. Try again in a moment.`;
-}
-
 /** Make sure the page has a current content script (tabs opened before an update have none). */
 async function ensureContentScript(tabId: number): Promise<void> {
   try { await chrome.tabs.sendMessage(tabId, { type: 'pp:ping' }); }
@@ -118,7 +102,11 @@ const notifyLibrary = () => chrome.runtime.sendMessage({ type: 'pp:library:chang
 async function handle(msg: Msg, sender: chrome.runtime.MessageSender): Promise<unknown> {
   switch (msg.type) {
     case 'pp:status':
-      return { hasKey: !!activeKey(await loadSettings()) };
+      // Lessons are included (hosted service); measurements never need the network.
+      return { hasKey: true, quota: await lastQuota() };
+    case 'pp:quota':
+      try { return { quota: (await callService<{ quota: Quota }>('/v1/quota')).quota }; }
+      catch { return { quota: await lastQuota() }; }
     case 'pp:open-options':
       await chrome.runtime.openOptionsPage();
       return { ok: true };
@@ -127,15 +115,9 @@ async function handle(msg: Msg, sender: chrome.runtime.MessageSender): Promise<u
       try { return await capture(sender.tab.windowId, msg.rect, msg.dpr); }
       catch (err) { return { error: err instanceof Error ? err.message : String(err), code: 'capture' }; }
     case 'pp:analyze': {
-      const settings = await loadSettings();
-      const key = activeKey(settings);
-      if (!key) return { error: `Add your ${PROVIDERS[settings.provider].label} API key in Pixel Peeper settings.`, code: 'no-key' };
       const facts = Facts.parse(msg.facts);
-      // Rules are recomputed here from the facts so the model sees exactly what the engine decided.
-      const results = evaluate(facts, { scope: msg.scope });
       const profile = await getProfile();
-      const analysis = await analyze({ provider: settings.provider, model: activeModel(settings), apiKey: key, audience: profile.level, facts, results, image: msg.image, scope: msg.scope, signal: AbortSignal.timeout(180_000) });
-      return { analysis };
+      return await callService<{ analysis: unknown; quota: Quota }>('/v1/lesson', { method: 'POST', body: { facts, scope: msg.scope, image: msg.image, audience: profile.level } });
     }
     case 'pp:store:put': {
       const record = await store.put(CaptureRecord.parse(msg.record), msg.images);
@@ -164,23 +146,6 @@ async function handle(msg: Msg, sender: chrome.runtime.MessageSender): Promise<u
       const profile = Profile.parse({ ...(await getProfile()), ...msg.patch });
       await store.setMeta('profile', profile);
       return { profile };
-    }
-    case 'pp:test-key':
-      try { return { error: await testKey(msg.provider, msg.key.trim()) }; }
-      catch { return { error: `Could not reach ${PROVIDERS[msg.provider].label}. Check your connection.` }; }
-    case 'pp:compare': {
-      const settings = await loadSettings();
-      const key = activeKey(settings);
-      if (!key) return { error: `Add your ${PROVIDERS[settings.provider].label} API key in Pixel Peeper settings.`, code: 'no-key' };
-      const records = (await Promise.all(msg.ids.map((id) => store.get(id)))).filter((r): r is CaptureRecord => !!r);
-      if (records.length < 2) return { error: 'Two or three saved ideas are needed to compare.', code: 'api' };
-      const profile = await getProfile();
-      const insight = await compareIdeas({
-        provider: settings.provider, model: activeModel(settings), apiKey: key, audience: profile.level, mode: msg.mode,
-        direction: msg.direction, extraNumbers: msg.extraNumbers, signal: AbortSignal.timeout(180_000),
-        items: records.map((r) => ({ facts: r.facts, scope: r.scope, pattern: r.pattern, site: r.page.siteName, page: r.page.pageName, analysis: normalizeAnalysis(r.analysis) })),
-      });
-      return { insight };
     }
     case 'pp:open-welcome':
       await chrome.tabs.create({ url: chrome.runtime.getURL('/welcome.html') });
@@ -254,8 +219,9 @@ export default defineBackground(() => {
     handle(msg, sender).then(sendResponse, (err: unknown) =>
       sendResponse({
         error: err instanceof Error ? err.message : String(err),
-        code: err instanceof AnalysisError ? err.code : undefined,
-        retryAfter: err instanceof AnalysisError ? err.retryAfter : undefined,
+        code: err instanceof ServiceError ? err.code : undefined,
+        retryAfter: err instanceof ServiceError ? err.extra.retryAfter : undefined,
+        quota: err instanceof ServiceError ? err.extra.quota : undefined,
       }),
     );
     return true; // async response

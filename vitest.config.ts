@@ -1,5 +1,5 @@
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
-  test: { environment: 'jsdom', include: ['packages/**/*.test.ts', 'apps/extension/components/**/*.test.ts'] },
+  test: { environment: 'jsdom', include: ['packages/**/*.test.ts', 'apps/extension/components/**/*.test.ts', 'apps/api/src/**/*.test.ts'] },
 });

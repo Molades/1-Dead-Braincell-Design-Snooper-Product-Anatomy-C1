@@ -1,11 +1,9 @@
-import { DEFAULT_MODELS } from '@pixelpeeper/analysis';
 import type { Goal, Level } from '@pixelpeeper/schema';
 import { esc } from './lesson';
-import { PROVIDERS, type Provider } from './settings';
 
 /** Onboarding steps. Pure functions returning HTML; state lives in the welcome page. */
 
-export const WELCOME_STEPS = ['What it does', 'What you want', 'AI lessons', 'Try it'] as const;
+export const WELCOME_STEPS = ['What it does', 'What you want', 'Lessons', 'Try it'] as const;
 
 export const GOALS: { id: Goal; title: string; detail: string }[] = [
   { id: 'learn', title: 'Learn why designs work', detail: 'Lessons explain the reasoning first.' },
@@ -23,9 +21,8 @@ export interface WelcomeState {
   step: number;
   goals: Goal[];
   level: Level;
-  provider: Provider;
-  hasKey: Partial<Record<Provider, boolean>>;
-  keyStatus: { kind: 'idle' | 'testing' | 'ok' | 'error'; message?: string };
+  /** Lessons per day included with the hosted service, once known. */
+  dailyLimit: number | null;
   shortcut: string | null;
 }
 
@@ -56,16 +53,11 @@ function whatYouWant(s: WelcomeState): string {
 }
 
 function aiLessons(s: WelcomeState): string {
-  const info = PROVIDERS[s.provider];
-  const st = s.keyStatus;
-  return `<h1>Lessons need an AI key</h1>
-    <p class="lead">Measurements and rule checks work without one. For written lessons, use your own key. It is stored on this device and sent only to ${esc(info.host)}.</p>
-    <fieldset class="choices providers"><legend>Provider</legend>${(Object.keys(PROVIDERS) as Provider[]).map((p) => `<label class="choice"><input type="radio" name="provider" value="${p}" ${s.provider === p ? 'checked' : ''}><span><strong>${PROVIDERS[p].label}</strong><em>${s.hasKey[p] ? 'Key saved' : `Default model ${DEFAULT_MODELS[p]}`}</em></span></label>`).join('')}</fieldset>
-    <label class="field"><span>${info.label} API key</span><input id="key" type="password" autocomplete="off" spellcheck="false" placeholder="${s.hasKey[s.provider] ? 'Saved. Paste a new key to replace it.' : `${info.keyPrefix}…`}"></label>
-    <p class="muted">Create one at ${esc(info.console)}. Usage is billed to your account there. Testing a key is free: it only lists the available models.</p>
-    <div class="row"><button data-key="test" ${st.kind === 'testing' ? 'disabled' : ''}>${st.kind === 'testing' ? 'Testing…' : 'Save and test'}</button><p class="status ${st.kind}" role="status">${esc(st.message ?? '')}</p></div>
-    <p class="what">When you choose <b>Get lesson</b>, Pixel Peeper sends a screenshot of your selection and its measured values. Nothing is sent while you hover or pick, and the page address is not included.</p>
-    ${nav(s, s.hasKey[s.provider] ? 'Next' : 'Measure only for now')}`;
+  return `<h1>Lessons are included</h1>
+    <p class="lead">${s.dailyLimit ? `You get <b>${s.dailyLimit} AI lessons a day</b>, free.` : 'AI lessons are included, free, with a daily allowance.'} No account or API key needed.</p>
+    <ul class="explain"><li><span class="badge measured">Free, unlimited</span> measurements, rule checks, the annotated viewer, your Library and exports.</li><li><span class="badge inferred">Counts toward today</span> each lesson, and each “Explain the differences” in Compare.</li></ul>
+    <p class="what">When you choose <b>Get lesson</b>, Pixel Peeper sends a screenshot of your selection and its measured values to its server, which asks an AI model (Groq) for the lesson. Screenshots are not stored. Nothing is sent while you hover or pick, and the page address is not included.</p>
+    ${nav(s)}`;
 }
 
 function tryIt(s: WelcomeState): string {

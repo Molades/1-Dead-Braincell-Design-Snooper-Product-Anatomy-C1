@@ -5,7 +5,7 @@
   "workspaces": ["packages/*", "apps/*"],
   "scripts": {
     "test": "vitest run",
-    "typecheck": "tsc -b packages/schema packages/measure packages/rules packages/analysis packages/store && npm run typecheck -w @pixelpeeper/extension",
+    "typecheck": "tsc -b packages/schema packages/measure packages/rules packages/analysis packages/store && tsc -p apps/api && npm run typecheck -w @pixelpeeper/extension",
     "dev:ext": "npm run dev -w @pixelpeeper/extension",
     "build:ext": "npm run build -w @pixelpeeper/extension"
   },

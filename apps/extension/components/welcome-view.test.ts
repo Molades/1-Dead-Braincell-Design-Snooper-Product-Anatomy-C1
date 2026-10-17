@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { welcomeView, type WelcomeState } from './welcome-view';
 
-const base: WelcomeState = { step: 0, goals: ['learn'], level: 'practising', provider: 'groq', hasKey: {}, keyStatus: { kind: 'idle' }, shortcut: '⌥P' };
+const base: WelcomeState = { step: 0, goals: ['learn'], level: 'practising', dailyLimit: 10, shortcut: '⌥P' };
 
 describe('welcome', () => {
   it('explains Measured and Inferred first, with progress', () => {
@@ -18,12 +18,14 @@ describe('welcome', () => {
     expect(html).not.toMatch(/value="learn" checked/);
     expect(html).toMatch(/value="senior" checked/);
   });
-  it('lets people skip the key, says what is sent, and shows test results', () => {
-    const html = welcomeView({ ...base, step: 2, keyStatus: { kind: 'error', message: 'Groq rejected this key.' } });
-    expect(html).toContain('Measure only for now');
-    expect(html).toContain('Nothing is sent while you hover or pick');
-    expect(html).toContain('Groq rejected this key.');
-    expect(welcomeView({ ...base, step: 2, hasKey: { groq: true } })).toContain('>Next<');
+  it('says lessons are included, with the daily allowance and what is sent, and asks for no key', () => {
+    const html = welcomeView({ ...base, step: 2 });
+    expect(html).toContain('Lessons are included');
+    expect(html).toContain('10 AI lessons a day');
+    expect(html).toContain('No account or API key needed');
+    expect(html).toContain('Screenshots are not stored');
+    expect(html).not.toContain('type="password"');
+    expect(welcomeView({ ...base, step: 2, dailyLimit: null })).toContain('daily allowance');
   });
   it('ends with how to start, including the shortcut', () => {
     const html = welcomeView({ ...base, step: 3 });

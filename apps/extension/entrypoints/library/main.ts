@@ -2,7 +2,6 @@ import { Insight, normalizeAnalysis, type CaptureRecord } from '@pixelpeeper/sch
 import { Store, type CaptureImages } from '@pixelpeeper/store';
 import { buildDirection, CATEGORIES, directionSummary, exportText, FILE_NAMES, type Category, type Choices, type ExportExtras, type Format } from '../../components/direction';
 import type { LessonError } from '../../components/lesson';
-import { activeKey, loadSettings } from '../../components/settings';
 import type { Tab } from '../../components/lesson';
 import { compareView, homeView, ideaView, MAX_COMPARE, type Filter, type Thumbs } from '../../components/library-view';
 import { DEFAULT_LAYERS, viewerHTML, wireViewer, type Layer } from '../../components/viewer';
@@ -34,7 +33,7 @@ let cmpKey = '';
 let cmp: CompareSaved = { choices: {}, readAcross: null, rationale: null };
 let busy: 'readAcross' | 'rationale' | null = null;
 let cmpError: (LessonError & { mode: 'readAcross' | 'rationale' }) | null = null;
-let hasKey = false;
+const hasKey = true; // lessons are included with the hosted service
 const keyFor = (ids: string[]) => `direction:${[...ids].sort().join(',')}`;
 async function loadCompare(ids: string[]) {
   const key = keyFor(ids);
@@ -43,7 +42,6 @@ async function loadCompare(ids: string[]) {
   const saved = await store.getMeta<CompareSaved>(key);
   const readAcross = Insight.safeParse(saved?.readAcross);
   cmp = { choices: saved?.choices ?? {}, readAcross: readAcross.success ? readAcross.data : null, rationale: saved?.rationale ?? null };
-  hasKey = !!activeKey(await loadSettings());
 }
 const saveCompare = () => store.setMeta(cmpKey, cmp);
 const extras = (): ExportExtras => ({ readAcross: cmp.readAcross, rationale: cmp.rationale });
