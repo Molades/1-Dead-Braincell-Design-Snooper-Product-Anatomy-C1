@@ -8,7 +8,7 @@ describe('welcome', () => {
     const html = welcomeView(base);
     expect(html).toContain('Measured');
     expect(html).toContain('Inferred');
-    expect(html).toMatch(/aria-current="step"><span>1<\/span>What it does/);
+    expect(html).toMatch(/aria-current="step"><span class="sr">Step 1 of 4: <\/span><span class="label">What it does/);
     expect(html).toContain('Skip setup');
   });
   it('keeps the chosen goals and level checked', () => {
@@ -26,6 +26,12 @@ describe('welcome', () => {
     expect(html).toContain('Screenshots are not stored');
     expect(html).not.toContain('type="password"');
     expect(welcomeView({ ...base, step: 2, dailyLimit: null })).toContain('daily allowance');
+  });
+  it('gives the sample lesson real values to replace and a detective per step', () => {
+    const html = welcomeView(base);
+    expect(html).toContain('data-measure="contrast"');
+    expect(html).toContain('data-measure="size"');
+    for (const step of [1, 2, 3]) expect(welcomeView({ ...base, step })).toMatch(/class="mascot speaker"/);
   });
   it('ends with how to start, including the shortcut', () => {
     const html = welcomeView({ ...base, step: 3 });

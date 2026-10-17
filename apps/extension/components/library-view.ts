@@ -6,6 +6,7 @@ import { buildDirection, categoryValue, CATEGORIES, CATEGORY_LABELS, compareRows
 import { describeEvidence, errorCard, type LessonError } from './lesson';
 import { esc, lessonTab, measurementsTab, rulesTab, tabs, type Tab } from './lesson';
 import { issueCount } from './viewer';
+import { icon, type IconName } from './icons';
 
 /** Library tab screens: Home, Idea and Compare. Pure functions returning HTML. */
 
@@ -95,7 +96,7 @@ export function ideaView(s: IdeaState): string {
       <a class="back" href="#/">← Library</a>
       <input class="title-input" data-title value="${esc(r.title)}" aria-label="Title" spellcheck="false">
       <p class="muted">${esc(r.page.siteName)} · ${esc(r.page.pageName)} · ${r.scope === 'page' ? 'visible page' : `&lt;${esc(r.facts.structure.tag.value)}&gt;`} · captured ${when(r.createdAt)} · <a href="${esc(r.page.url)}" target="_blank" rel="noopener">Open source page ↗</a></p>
-      <div class="actions">${r.saved ? '<span class="saved-state">✓ Saved</span>' : `<button class="primary" data-keep="${esc(r.id)}">Save idea</button>`}${r.saved ? `<button data-toggle-compare="${esc(r.id)}" aria-pressed="${inCompare}">${inCompare ? '✓ In compare' : 'Add to compare'}</button>` : ''}${s.image ? `<button data-view="${esc(r.id)}">View annotated</button>` : ''}<button data-export="${esc(r.id)}">Export</button><button class="danger" data-delete="${esc(r.id)}">Delete</button></div>
+      <div class="actions">${r.saved ? `<span class="saved-state">${icon('check-circle', 14)}Saved</span>` : `<button class="primary" data-keep="${esc(r.id)}">Save idea</button>`}${r.saved ? `<button data-toggle-compare="${esc(r.id)}" aria-pressed="${inCompare}">${inCompare ? `${icon('check', 14)}In compare` : `${icon('arrows-left-right', 14)}Add to compare`}</button>` : ''}${s.image ? `<button data-view="${esc(r.id)}">View annotated</button>` : ''}<button data-export="${esc(r.id)}">Export</button><button class="danger" data-delete="${esc(r.id)}">Delete</button></div>
     </div>
     <div class="idea-body">
       <figure class="shot-big">${s.image ? `<button class="shot-open" data-view="${esc(r.id)}" aria-label="Open full screen with measured annotations"><img src="${s.image}" alt="Captured screenshot of ${esc(r.pattern)}"><span class="shot-hint">View with measurements${issueCount(r.annotations) ? ` · ${issueCount(r.annotations)} issue${issueCount(r.annotations) > 1 ? 's' : ''}` : ''}</span></button>` : `<div class="no-shot">No screenshot was taken. Screenshots are captured when a lesson runs with an AI key.</div>`}<figcaption>What was analysed · ${esc(r.page.siteName)} · ${when(r.createdAt)}</figcaption></figure>
@@ -118,7 +119,6 @@ export interface CompareState {
   /** Which AI request is running, and the last error. */
   busy: 'readAcross' | 'rationale' | null;
   error: (LessonError & { mode: 'readAcross' | 'rationale' }) | null;
-  hasKey: boolean;
 }
 
 /** "A:typography.fontSize" → "A · Font size 16px". */
@@ -127,16 +127,14 @@ function letterChip(e: string, items: CaptureRecord[]): string {
   const i = m ? 'ABC'.indexOf(m[1]!) : -1;
   if (!m || i < 0 || !items[i]) return '';
   const d = describeEvidence(m[2]!, items[i]!.facts, evaluateRules(items[i]!.facts, { scope: items[i]!.scope }));
-  return d ? `<span class="ev" title="Measured">${m[1]} · ${esc(d.label)} <b>${d.value}</b></span>` : '';
+  return d ? `<span class="ev" title="Measured"><i class="mdot" aria-hidden="true"></i>${m[1]} · ${esc(d.label)} <b>${d.value}</b></span>` : '';
 }
 
 function insightBlock(s: CompareState): string {
   if (s.busy === 'readAcross') return '<p class="pending">Comparing the ideas… This sends their measured values and earlier lessons as text, no screenshots.</p>';
   if (s.error?.mode === 'readAcross') return errorCard(s.error, Date.now()).replace('data-action="retry"', 'data-action="explain"');
   if (!s.readAcross) {
-    return s.hasKey
-      ? '<p class="muted">Ask for a read-across of why these feel different and what each suits. Uses one AI request; the result is kept with this comparison.</p><button class="primary" data-action="explain">Explain the differences</button>'
-      : '<p class="muted">Add an API key in settings to get an AI read-across. The measured comparison above works without one.</p><button data-action="settings">Open settings</button>';
+    return '<p class="muted">Ask for a read-across of why these feel different and what each suits. Uses one AI request; the result is kept with this comparison.</p><button class="primary" data-action="explain">Explain the differences</button>';
   }
   const r = s.readAcross;
   const point = (c: Insight['claims'][number]) => `<div class="point">${c.title ? `<strong>${esc(c.title)}</strong>` : ''}<p>${esc(c.text)}</p><div class="evs">${c.evidence.map((e) => letterChip(e, s.items)).join('')}</div></div>`;
@@ -149,41 +147,61 @@ function rationaleBlock(s: CompareState): string {
   const label = s.rationale?.source === 'user' ? '<span class="badge user">User authored</span>' : s.rationale ? '<span class="badge inferred">Inferred · AI draft</span>' : '';
   const action = s.busy === 'rationale' ? '<p class="pending">Drafting a rationale for your choices…</p>'
     : s.error?.mode === 'rationale' ? errorCard(s.error, Date.now()).replace('data-action="retry"', 'data-action="draft"')
-    : s.hasKey ? `<button data-action="draft">${s.rationale ? 'Redraft with AI' : 'Draft rationale with AI'}</button>` : '';
+    : `<button data-action="draft">${s.rationale ? 'Redraft with AI' : 'Draft rationale with AI'}</button>`;
   return `<div class="rationale-head">${label}${action}</div>
     <textarea data-rationale rows="5" placeholder="Why these choices belong together, where you will use them…">${esc(s.rationale?.text ?? '')}</textarea>
     <p class="muted">Editing an AI draft makes it yours: it is then exported as User authored.</p>`;
 }
 
+
+
+const LETTERS = 'ABC';
+/** A section of the compare page: a tinted icon tile, a title, an optional tag and a one-line explainer. */
+const head = (name: IconName, tone: string, title: string, tag = '', sub = '') =>
+  `<header class="c-head"><span class="ico ${tone}" aria-hidden="true">${icon(name, 16)}</span><div><h2>${title}${tag}</h2>${sub ? `<p>${sub}</p>` : ''}</div></header>`;
+const mTag = `<span class="badge">${icon('shield-check', 12)}Measured</span>`;
+const iTag = `<span class="badge inferred">${icon('sparkle', 12)}Inferred</span>`;
+
 export function compareView(s: CompareState): string {
-  const letters = 'ABC';
   const rows = compareRows(s.items);
+  const differing = rows.filter((r) => r.differs).length;
   const d = buildDirection(s.items, s.choices);
   const c = d.contrast;
-  const contrast = !c ? '<p class="contrast neutral">Contrast not checked: text color or background is omitted.</p>'
-    : !c.canMeasure ? `<p class="contrast neutral">Contrast can’t be measured: ${esc(c.reason)}</p>`
-    : `<p class="contrast ${c.aa ? 'ok' : 'bad'}"><span class="badge">Measured</span> ${c.newPairing ? `<b>New pairing</b>: text from ${c.textFrom} on background from ${c.backgroundFrom}` : `Text and background from ${c.textFrom}`} · <b>${c.ratio}:1</b> · AA ${c.aa ? 'pass' : 'fail'} · AAA ${c.aaa ? 'pass' : 'fail'}${c.newPairing ? ' · recomputed for this combination' : ''}</p>`;
+  const contrast = !c ? `<div class="c-contrast neutral">${icon('circle-dashed', 18)}<p>Contrast not checked: text color or background is omitted.</p></div>`
+    : !c.canMeasure ? `<div class="c-contrast neutral">${icon('circle-dashed', 18)}<p>Contrast can’t be measured: ${esc(c.reason)}</p></div>`
+    : `<div class="contrast c-contrast ${c.aa ? 'ok' : 'bad'}"><div class="c-ratio"><span>${c.newPairing ? '<b>New pairing</b>' : 'Contrast'}</span><strong>${c.ratio}:1</strong></div><p>${c.newPairing ? `Text from ${c.textFrom} on background from ${c.backgroundFrom} · recomputed for this combination` : `Text and background from ${c.textFrom}`}</p><div class="lvls"><span class="lvl ${c.aa ? 'ok' : 'no'}">${icon(c.aa ? 'check-circle' : 'x-circle', 12)}AA ${c.aa ? 'pass' : 'fail'}</span><span class="lvl ${c.aaa ? 'ok' : 'no'}">${icon(c.aaa ? 'check-circle' : 'x-circle', 12)}AAA ${c.aaa ? 'pass' : 'fail'}</span></div></div>`;
   const extras: ExportExtras = { readAcross: s.readAcross, rationale: s.rationale };
+  const n = s.items.length;
+  const card = (r: CaptureRecord, i: number) => `<article class="c-card" data-letter="${LETTERS[i]}">
+      <div class="c-stage">${s.thumbs[r.id] ? `<img src="${s.thumbs[r.id]}" alt="">` : `<span class="no-shot">${icon('image', 20)}No screenshot</span>`}<span class="letter">${LETTERS[i]}</span></div>
+      <div class="c-info"><strong>${esc(r.titleSource === 'user' ? r.title : r.pattern)}</strong><span class="muted">${esc(r.page.siteName)} · ${esc(r.page.pageName)}</span>${r.analysis?.headline ? `<p class="hl">${iTag}<span>${esc(r.analysis.headline.text)}</span></p>` : ''}</div>
+    </article>`;
   return `<div class="compare">
-    <a class="back" href="#/">← Library</a>
-    <h1>Compare ${s.items.length} ideas</h1>
-    <div class="cols" style="--n:${s.items.length}">${s.items.map((r, n) => `<div class="col"><span class="letter">${letters[n]}</span><div class="thumb">${s.thumbs[r.id] ? `<img src="${s.thumbs[r.id]}" alt="">` : '<span class="no-shot">No screenshot</span>'}</div><strong>${esc(r.titleSource === 'user' ? r.title : r.pattern)}</strong><span class="muted">${esc(r.page.siteName)} · ${esc(r.page.pageName)}</span>${r.analysis?.headline ? `<p class="hl"><span class="badge inferred">Inferred</span> ${esc(r.analysis.headline.text)}</p>` : ''}</div>`).join('')}</div>
-    <h2><span class="badge">Measured</span> Side by side</h2>
-    <table class="diff"><thead><tr><th></th>${s.items.map((_, n) => `<th>${letters[n]}</th>`).join('')}</tr></thead><tbody>${rows.map((row) => `<tr class="${row.differs ? 'differs' : ''}"><th>${esc(row.label)}</th>${row.values.map((v) => `<td>${v}</td>`).join('')}</tr>`).join('')}</tbody></table>
-    <p class="muted">Highlighted rows differ.</p>
-    <h2><span class="badge inferred">Inferred</span> Why these feel different</h2>
-    <div class="insight">${insightBlock(s)}</div>
-    <h2>Build your direction</h2>
-    <div class="borrow">${CATEGORIES.map((cat) => {
-      const chosen = s.choices[cat] ?? 0;
-      return `<fieldset><legend>${CATEGORY_LABELS[cat]}</legend>${s.items.map((it, n) => `<label class="opt"><input type="radio" name="${cat}" value="${n}" ${chosen === n ? 'checked' : ''}><span class="letter-inline">${letters[n]}</span><span class="val">${cat === 'textColor' || cat === 'background' ? `<i class="sw" style="background:${esc(categoryValue(it, cat))}"></i>` : ''}${esc(categoryValue(it, cat))}</span></label>`).join('')}<label class="opt omit"><input type="radio" name="${cat}" value="omit" ${chosen === 'omit' ? 'checked' : ''}><span class="val">Leave out</span></label></fieldset>`;
-    }).join('')}</div>
-    ${contrast}
-    <h2>Rationale</h2>
-    <div class="rationale">${rationaleBlock(s)}</div>
-    <h2>Export your direction</h2>
-    <div class="formats">${(['md', 'json', 'css'] as const).map((f) => `<button data-format="${f}" aria-pressed="${s.format === f}">${FORMAT_LABELS[f]}</button>`).join('')}</div>
-    <pre>${esc(exportText(s.items, s.choices, s.format, extras))}</pre>
-    <div class="actions"><button data-action="copy">Copy</button><button class="primary" data-action="download">Download</button></div>
+    <a class="back" href="#/">${icon('arrow-left', 16)}Library</a>
+    <header class="c-title"><h1>Compare ${n} ideas</h1><p>Measured values line up first. Then the AI’s reading, then you pick what to borrow.</p></header>
+    <div class="cols c-cards" style="--n:${n}">${s.items.map(card).join(n === 2 ? '<span class="vs" aria-hidden="true">vs</span>' : '')}</div>
+
+    <section class="c-sec">${head('list-checks', 'green', 'Side by side', mTag, `${differing} of ${rows.length} properties differ`)}
+      <div class="c-meter" aria-hidden="true">${rows.map((r) => `<i class="${r.differs ? 'on' : ''}"></i>`).join('')}</div>
+      <table class="diff"><thead><tr><th></th>${s.items.map((_, i) => `<th><span class="letter-inline" data-letter="${LETTERS[i]}">${LETTERS[i]}</span></th>`).join('')}</tr></thead><tbody>${rows.map((row) => `<tr class="${row.differs ? 'differs' : ''}"><th>${row.differs ? '<i class="ddot" aria-label="Differs"></i>' : ''}${esc(row.label)}</th>${row.values.map((v) => `<td>${v}</td>`).join('')}</tr>`).join('')}</tbody></table>
+      <p class="muted">Highlighted rows differ.</p></section>
+
+    <section class="c-sec">${head('sparkle', 'amber', 'Why these feel different', iTag)}
+      <div class="insight">${insightBlock(s)}</div></section>
+
+    <section class="c-sec">${head('lightning', 'indigo', 'Build your direction', '', 'Take each property from the idea you like, or leave it out.')}
+      <div class="borrow">${CATEGORIES.map((cat) => {
+        const chosen = s.choices[cat] ?? 0;
+        return `<fieldset><legend>${CATEGORY_LABELS[cat]}</legend>${s.items.map((it, i) => `<label class="opt"><input type="radio" name="${cat}" value="${i}" ${chosen === i ? 'checked' : ''}><span class="letter-inline" data-letter="${LETTERS[i]}">${LETTERS[i]}</span><span class="val">${cat === 'textColor' || cat === 'background' ? `<i class="sw" style="background:${esc(categoryValue(it, cat))}"></i>` : ''}${esc(categoryValue(it, cat))}</span></label>`).join('')}<label class="opt omit"><input type="radio" name="${cat}" value="omit" ${chosen === 'omit' ? 'checked' : ''}><span class="val">Leave out</span></label></fieldset>`;
+      }).join('')}</div>
+      ${contrast}</section>
+
+    <section class="c-sec">${head('book-open-text', 'gray', 'Rationale')}
+      <div class="rationale">${rationaleBlock(s)}</div></section>
+
+    <section class="c-sec">${head('export', 'gray', 'Export your direction')}
+      <div class="formats">${(['md', 'json', 'css'] as const).map((f) => `<button data-format="${f}" aria-pressed="${s.format === f}">${FORMAT_LABELS[f]}</button>`).join('')}</div>
+      <pre>${esc(exportText(s.items, s.choices, s.format, extras))}</pre>
+      <div class="actions"><button data-action="copy">${icon('copy', 16)}Copy</button><button class="primary" data-action="download">${icon('export', 16)}Download</button></div></section>
   </div>`;
 }

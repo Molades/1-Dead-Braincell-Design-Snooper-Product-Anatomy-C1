@@ -33,7 +33,6 @@ let cmpKey = '';
 let cmp: CompareSaved = { choices: {}, readAcross: null, rationale: null };
 let busy: 'readAcross' | 'rationale' | null = null;
 let cmpError: (LessonError & { mode: 'readAcross' | 'rationale' }) | null = null;
-const hasKey = true; // lessons are included with the hosted service
 const keyFor = (ids: string[]) => `direction:${[...ids].sort().join(',')}`;
 async function loadCompare(ids: string[]) {
   const key = keyFor(ids);
@@ -97,7 +96,7 @@ async function render(): Promise<void> {
     if (items.length < 2) { location.hash = '#/'; return; }
     document.title = 'Compare — Pixel Peeper Library';
     await loadCompare(r.ids);
-    app.innerHTML = compareView({ items, thumbs, choices: cmp.choices, format, readAcross: cmp.readAcross, rationale: cmp.rationale, busy, error: cmpError, hasKey });
+    app.innerHTML = compareView({ items, thumbs, choices: cmp.choices, format, readAcross: cmp.readAcross, rationale: cmp.rationale, busy, error: cmpError });
     return;
   }
   document.title = 'Pixel Peeper Library';

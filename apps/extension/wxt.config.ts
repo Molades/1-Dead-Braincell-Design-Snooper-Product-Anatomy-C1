@@ -16,6 +16,6 @@ export default defineConfig({
     host_permissions: [`${new URL(apiUrl).origin}/*`],
     action: { default_title: 'Open Pixel Peeper' },
     commands: { pick: { suggested_key: { default: 'Alt+P', mac: 'Alt+P' }, description: 'Pick an element to learn from' } },
-    web_accessible_resources: [{ resources: ['detective-poses.png'], matches: ['<all_urls>'] }],
+    web_accessible_resources: [{ resources: ['poses/*.svg', 'fonts/*.woff2'], matches: ['<all_urls>'] }],
   },
 });

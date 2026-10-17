@@ -67,8 +67,10 @@ describe('errors', () => {
     expect(html).toContain('disabled');
     expect(errorCard({ code: 'rate-limited', message: 'Wait.', retryAt: 10_000 }, 11_000)).not.toContain('disabled');
   });
-  it('sends key problems to settings', () => {
-    expect(errorCard({ code: 'invalid-key', message: 'Rejected.' }, 0)).toContain('data-action="settings"');
+  it('offers no retry when today’s lessons are used up, and a retry when lessons are paused', () => {
+    expect(errorCard({ code: 'quota', message: 'Used up.' }, 0)).not.toContain('data-action="retry"');
+    expect(errorCard({ code: 'paused', message: 'Paused.' }, 0)).toContain('data-action="retry"');
+    expect(errorCard({ code: 'network', message: 'Offline.' }, 0)).toContain('Couldn&#39;t reach Pixel Peeper');
   });
 });
 

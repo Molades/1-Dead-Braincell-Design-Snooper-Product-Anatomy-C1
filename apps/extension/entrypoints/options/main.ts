@@ -1,3 +1,5 @@
+import '../../components/fonts.css';
+import '../../components/tokens.css';
 import type { Quota } from '../../components/service';
 
 /** Settings: today's allowance, what is sent, and setup. Lessons run on Pixel Peeper's service. */
@@ -5,15 +7,17 @@ const app = document.getElementById('app')!;
 
 app.innerHTML = `
   <style>
-    :root{color-scheme:light;font:15px/1.6 system-ui;color:#252523;background:#f8f7f2}
+    :root{color-scheme:light;font:15px/1.6 var(--sans);color:#1b1c1f;background:#f7f8f8}
     body{margin:0}main{max-width:560px;margin:48px auto;padding:0 16px}
-    h1{font:400 32px/1.2 Georgia,serif;margin:0 0 8px}h2{font:500 15px system-ui;margin:28px 0 8px}
-    p,li{color:#4a4a45}.muted{color:#62625d;font-size:13px}
-    .allowance{background:#fffefa;border:1px solid #deded5;border-radius:14px;padding:16px 18px}
-    .allowance strong{font:400 28px/1.1 Georgia,serif;display:block;margin-bottom:4px}
-    .bar{height:8px;border-radius:99px;background:#eeede6;overflow:hidden;margin:10px 0 6px}.bar i{display:block;height:100%;background:#216659}
-    button{font:inherit;padding:9px 16px;border-radius:9px;border:0;cursor:pointer;background:#eeede5}
-    button:focus-visible{outline:3px solid #345be4;outline-offset:2px}
+    *{corner-shape:var(--sq)}::selection{background:rgb(94 106 210 / .2)}
+    h1,h2{font-family:var(--display);letter-spacing:-.02em}
+    h1{font:700 32px/1.2 var(--display);letter-spacing:-.025em;margin:0 0 8px}h2{font:700 17px var(--display);margin:28px 0 8px}
+    p,li{color:#3c3f44}.muted{color:#6b6f76;font-size:13px}
+    .allowance{background:#ffffff;border-radius:16px;padding:16px 18px;box-shadow:inset 0 0 0 1px var(--line),var(--hi),var(--lift-1)}
+    .allowance strong{display:block;font:700 26px/1.1 var(--display);letter-spacing:-.02em;margin-bottom:4px}
+    .bar{height:8px;border-radius:99px;background:var(--g-track,#eceef1);overflow:hidden;margin:10px 0 6px}.bar i{display:block;height:100%;background:var(--measured)}
+    button{font:600 14px/1 var(--display);letter-spacing:-.01em;padding:11px 16px;border-radius:12px;border:0;cursor:pointer;color:#1b1c1f;background:var(--g-control);box-shadow:inset 0 0 0 1px var(--line),var(--hi),var(--lift-1);transition:transform .15s cubic-bezier(.23,1,.32,1),background-color .15s}
+    button:active{transform:scale(.97)}button:focus-visible{outline:3px solid #5e6ad2;outline-offset:2px}
   </style>
   <h1>Pixel Peeper settings</h1>
   <h2>Today’s lessons</h2>
