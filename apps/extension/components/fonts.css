@@ -1,0 +1,5 @@
+/* Bundled faces (SIL OFL, licences in public/fonts). See DESIGN.md "Visual language v2".
+   Schibsted Grotesk for display and buttons, Roboto for reading, JetBrains Mono for measured values. */
+@font-face { font-family: "PP Display"; src: url("/fonts/schibsted-grotesk.woff2") format("woff2"); font-weight: 400 900; font-style: normal; font-display: swap; }
+@font-face { font-family: "PP Sans"; src: url("/fonts/roboto.woff2") format("woff2"); font-weight: 100 900; font-style: normal; font-display: swap; }
+@font-face { font-family: "PP Mono"; src: url("/fonts/jetbrains-mono.woff2") format("woff2"); font-weight: 100 800; font-style: normal; font-display: swap; }
