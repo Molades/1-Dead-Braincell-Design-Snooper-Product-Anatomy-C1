@@ -72,8 +72,6 @@ code { font: 500 .88em var(--mono); padding: 1px 5px; border-radius: 5px; backgr
 .btn .ph { font-size: 16px; transition: transform .22s var(--ease-out); }
 .primary { color: #fff; background: var(--g-primary); box-shadow: inset 0 0 0 1px #4a55bd, var(--hi-strong), var(--glow-primary); }
 .secondary { color: var(--ink); background: var(--g-control); box-shadow: inset 0 0 0 1px var(--line), var(--hi), var(--lift-1); }
-.soon { color: var(--accent-ink); cursor: default; background: var(--g-indigo); box-shadow: inset 0 0 0 1px var(--accent-line), var(--hi); }
-.soon:active { transform: none; }
 .btn.small { min-height: 36px; padding: 0 14px; border-radius: 10px; font-size: 14px; }
 @media (hover: hover) and (pointer: fine) {
   .primary:hover { background: var(--g-primary-hover); }
@@ -237,6 +235,9 @@ main::before { content: ""; position: absolute; left: 0; right: 0; top: -64px; h
 .step h3 { margin: 6px 0 8px; font-size: 18px; }
 .step p { margin: 0; color: var(--ink-2); font-size: 15px; }
 .num { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; font: 700 16px/1 var(--display); color: #fff; background: var(--g-primary); box-shadow: inset 0 0 0 1px #4a55bd, var(--hi-strong), var(--glow-primary); }
+.substeps { margin: 12px 0 0; padding-left: 20px; display: grid; gap: 8px; font-size: 15px; color: var(--ink-2); }
+.substeps li::marker { font: 600 13px var(--display); color: var(--muted); }
+.substeps a, .closing-card p a { color: var(--accent-ink); font-weight: 500; text-underline-offset: 3px; }
 .keys { list-style: none; padding: 0; margin: 14px 0 0; display: grid; gap: 8px; font-size: 14px; color: var(--muted); }
 .keys li { display: flex; align-items: center; gap: 6px; }
 .keys span { margin-left: 6px; }

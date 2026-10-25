@@ -26,7 +26,7 @@
         <a href="#guide">How to</a>
         <a href="#faq">FAQ</a>
       </nav>
-      <span class="btn soon small" data-store><i data-icon="hourglass-medium"></i>Coming soon</span>
+      <a class="btn primary small" href="https://github.com/Molades/1-Dead-Braincell-Design-Snooper-Product-Anatomy-C1/releases/latest/download/pixel-peeper-chrome.zip" data-download><i data-icon="download-simple"></i>Download</a>
     </div>
   </header>
 
@@ -38,11 +38,11 @@
         <h1>Inspect Element for design language.</h1>
         <p class="lead">Pick anything on a website and Pixel Peeper tells you what it measured, why it works, and keeps the idea with its source, so you can reuse it in your own work.</p>
         <div class="cta-row">
-          <span class="btn soon" data-store><i data-icon="hourglass-medium"></i>Coming soon to Chrome</span>
+          <a class="btn primary" href="https://github.com/Molades/1-Dead-Braincell-Design-Snooper-Product-Anatomy-C1/releases/latest/download/pixel-peeper-chrome.zip" data-download><i data-icon="download-simple"></i>Download for Chrome</a>
           <a class="btn secondary" href="#watch"><i data-icon="play"></i>Watch the demo</a>
         </div>
         <ul class="facts" aria-label="At a glance">
-          <li><i data-icon="check-circle"></i>Free, 10 AI lessons a day</li>
+          <li><i data-icon="check-circle"></i>Free download from GitHub</li>
           <li><i data-icon="lock-simple"></i>No account</li>
           <li><i data-icon="browser"></i>Never shrinks the page</li>
         </ul>
@@ -221,16 +221,22 @@
           <li class="step" id="install">
             <span class="num">1</span>
             <div>
-              <h3>Install and pin</h3>
-              <p>Add Pixel Peeper to Chrome, then open the puzzle-piece menu in the toolbar and pin it so the icon is always one click away.</p>
+              <h3>Download and install</h3>
+              <p>Pixel Peeper isn't in the Chrome Web Store yet, so you add it yourself. It takes about a minute.</p>
+              <ol class="substeps">
+                <li><a href="https://github.com/Molades/1-Dead-Braincell-Design-Snooper-Product-Anatomy-C1/releases/latest/download/pixel-peeper-chrome.zip" data-download>Download the zip</a> and unzip it. Keep the folder somewhere it won't be deleted.</li>
+                <li>In Chrome, go to <code>chrome://extensions</code> and turn on <b>Developer mode</b> (top right).</li>
+                <li>Click <b>Load unpacked</b> and choose the unzipped <code>pixel-peeper</code> folder.</li>
+                <li>Open the puzzle-piece menu in the toolbar and pin Pixel Peeper.</li>
+              </ol>
               <div class="toolbar" aria-hidden="true"><i data-icon="puzzle-piece"></i><span class="tb-item"><img src="assets/poses/peek-face.png" alt="" width="28" height="14">Pixel Peeper</span><i data-icon="push-pin" class="pinned"></i></div>
             </div>
           </li>
           <li class="step">
             <span class="num">2</span>
             <div>
-              <h3>Tell it about you</h3>
-              <p>A welcome tab opens after installing. Choose your goals (learn why designs work, build a library, check accessibility, pull tokens) and your level. Every step can be skipped.</p>
+              <h3>Tell it about you, add a key</h3>
+              <p>A welcome tab opens after installing. Choose your goals and your level, then paste a Groq or Anthropic API key for written lessons. Every step can be skipped, and measurements work without a key.</p>
             </div>
           </li>
           <li class="step">
@@ -283,14 +289,14 @@
         <div>
           <p class="kicker">Privacy</p>
           <h2 id="privacy-h">Your library lives in your browser.</h2>
-          <p>Captures, screenshots, lessons, notes and collections are stored locally. We don't have a copy, and uninstalling deletes them.</p>
+          <p>Captures, screenshots, lessons, notes, collections and your API key are stored locally. There's no Pixel Peeper server: we never receive a copy, and uninstalling deletes everything.</p>
           <img class="privacy-art" src="assets/poses/box.png" alt="" width="150" height="125" loading="lazy">
         </div>
         <div class="ledger">
           <div class="row"><span class="state stays"><i data-icon="lock-simple"></i>Stays on your device</span><p>Everything you hover and pick, and everything you save.</p></div>
-          <div class="row"><span class="state sent"><i data-icon="arrow-up-right"></i>Sent on Get lesson</span><p>A screenshot of the visible selection, its measured values and rule results, and your chosen level.</p></div>
+          <div class="row"><span class="state sent"><i data-icon="arrow-up-right"></i>Sent on Get lesson</span><p>A screenshot of the visible selection, its measured values and rule results, and your chosen level, sent straight from your browser to the AI provider you chose, using your key.</p></div>
           <div class="row"><span class="state never"><i data-icon="x-circle"></i>Never sent</span><p>The page address, your name or email, or your browsing history.</p></div>
-          <div class="row"><span class="state never"><i data-icon="x-circle"></i>Never stored</span><p>Our server passes the request to the AI model and keeps neither the screenshot nor the lesson.</p></div>
+          <div class="row"><span class="state never"><i data-icon="x-circle"></i>Never sent to us</span><p>Anything at all. Requests go only to Groq or Anthropic, under their own privacy policies.</p></div>
         </div>
       </div>
     </section>
@@ -305,15 +311,23 @@
         <div class="faq">
           <details name="faq" open>
             <summary>Is Pixel Peeper free?<i data-icon="caret-down"></i></summary>
-            <p>Yes. Picking, measurements, rule checks, the Library, Compare and export are free without limits. AI lessons are included too, with a daily allowance of 10 that resets every day at midnight UTC.</p>
+            <p>Yes. Picking, measurements, rule checks, the Library, Compare and export are free. Written lessons use your own Groq or Anthropic API key, so any cost is billed by that provider; Groq has a free plan with rate limits.</p>
           </details>
           <details name="faq">
             <summary>Do I need an account or an API key?<i data-icon="caret-down"></i></summary>
-            <p>No. There are no accounts. The extension creates an anonymous install ID to keep track of the daily allowance, and lessons run through Pixel Peeper's own server.</p>
+            <p>There's no Pixel Peeper account. For written lessons you need an API key from Groq or Anthropic: paste it once during setup or in Settings. It stays in your browser and is only sent to that provider.</p>
           </details>
           <details name="faq">
-            <summary>What happens when I run out of lessons for the day?<i data-icon="caret-down"></i></summary>
-            <p>Everything measured keeps working: Rules and Measurements still fill in, and you can save, compare and export as usual. Only the written lesson waits until the next day.</p>
+            <summary>What works without a key?<i data-icon="caret-down"></i></summary>
+            <p>Everything measured: picking, Rules and Measurements, the annotated captures, saving, Compare's value table and export. Only the written lesson and Compare's read-across need a key.</p>
+          </details>
+          <details name="faq">
+            <summary>Why download from GitHub instead of the Chrome Web Store?<i data-icon="caret-down"></i></summary>
+            <p>Pixel Peeper is in early testing, so builds are shared on GitHub first. Installing with <b>Load unpacked</b> is the standard way to run an extension that isn't in the store. Chrome may remind you that developer-mode extensions are on; that's expected.</p>
+          </details>
+          <details name="faq">
+            <summary>How do I update to a new version?<i data-icon="caret-down"></i></summary>
+            <p>Download the latest zip, replace the files in your <code>pixel-peeper</code> folder with the new ones, then click the reload arrow on Pixel Peeper's card in <code>chrome://extensions</code>. Your saved ideas and key are kept. Removing the extension deletes them.</p>
           </details>
           <details name="faq">
             <summary>What's the difference between Measured and Inferred?<i data-icon="caret-down"></i></summary>
@@ -353,9 +367,9 @@
         <img src="assets/poses/think.png" alt="" width="150" height="125" loading="lazy">
         <div>
           <h2>Start a library of reasons, not screenshots.</h2>
-          <p>Coming soon for Chrome. Your first lesson will take about two minutes.</p>
+          <p>Free for Chrome, from GitHub. Setup takes a few minutes. <a href="https://github.com/Molades/1-Dead-Braincell-Design-Snooper-Product-Anatomy-C1/releases/latest">See all releases</a></p>
         </div>
-        <span class="btn soon" data-store><i data-icon="hourglass-medium"></i>Coming soon to Chrome</span>
+        <a class="btn primary" href="https://github.com/Molades/1-Dead-Braincell-Design-Snooper-Product-Anatomy-C1/releases/latest/download/pixel-peeper-chrome.zip" data-download><i data-icon="download-simple"></i>Download for Chrome</a>
       </div>
     </section>
   </main>
