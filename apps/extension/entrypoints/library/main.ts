@@ -2,6 +2,8 @@ import { Insight, normalizeAnalysis, type CaptureRecord } from '@pixelpeeper/sch
 import { Store, type CaptureImages } from '@pixelpeeper/store';
 import { buildDirection, CATEGORIES, directionSummary, exportText, FILE_NAMES, type Category, type Choices, type ExportExtras, type Format } from '../../components/direction';
 import type { LessonError } from '../../components/lesson';
+import { LESSONS_MODE } from '../../components/mode';
+import { activeKey, loadSettings } from '../../components/settings';
 import type { Tab } from '../../components/lesson';
 import { compareView, homeView, ideaView, MAX_COMPARE, type Filter, type Thumbs } from '../../components/library-view';
 import { DEFAULT_LAYERS, viewerHTML, wireViewer, type Layer } from '../../components/viewer';
@@ -33,6 +35,7 @@ let cmpKey = '';
 let cmp: CompareSaved = { choices: {}, readAcross: null, rationale: null };
 let busy: 'readAcross' | 'rationale' | null = null;
 let cmpError: (LessonError & { mode: 'readAcross' | 'rationale' }) | null = null;
+let hasKey = true;
 const keyFor = (ids: string[]) => `direction:${[...ids].sort().join(',')}`;
 async function loadCompare(ids: string[]) {
   const key = keyFor(ids);
@@ -41,6 +44,7 @@ async function loadCompare(ids: string[]) {
   const saved = await store.getMeta<CompareSaved>(key);
   const readAcross = Insight.safeParse(saved?.readAcross);
   cmp = { choices: saved?.choices ?? {}, readAcross: readAcross.success ? readAcross.data : null, rationale: saved?.rationale ?? null };
+  hasKey = LESSONS_MODE === 'hosted' || !!activeKey(await loadSettings());
 }
 const saveCompare = () => store.setMeta(cmpKey, cmp);
 const extras = (): ExportExtras => ({ readAcross: cmp.readAcross, rationale: cmp.rationale });
@@ -96,7 +100,7 @@ async function render(): Promise<void> {
     if (items.length < 2) { location.hash = '#/'; return; }
     document.title = 'Compare — Pixel Peeper Library';
     await loadCompare(r.ids);
-    app.innerHTML = compareView({ items, thumbs, choices: cmp.choices, format, readAcross: cmp.readAcross, rationale: cmp.rationale, busy, error: cmpError });
+    app.innerHTML = compareView({ items, thumbs, choices: cmp.choices, format, readAcross: cmp.readAcross, rationale: cmp.rationale, busy, error: cmpError, hasKey });
     return;
   }
   document.title = 'Pixel Peeper Library';

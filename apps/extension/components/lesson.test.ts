@@ -70,7 +70,7 @@ describe('errors', () => {
   it('offers no retry when today’s lessons are used up, and a retry when lessons are paused', () => {
     expect(errorCard({ code: 'quota', message: 'Used up.' }, 0)).not.toContain('data-action="retry"');
     expect(errorCard({ code: 'paused', message: 'Paused.' }, 0)).toContain('data-action="retry"');
-    expect(errorCard({ code: 'network', message: 'Offline.' }, 0)).toContain('Couldn&#39;t reach Pixel Peeper');
+    expect(errorCard({ code: 'network', message: 'Offline.' }, 0)).toContain('Couldn&#39;t reach the AI provider'); // own-key build (default)
   });
 });
 

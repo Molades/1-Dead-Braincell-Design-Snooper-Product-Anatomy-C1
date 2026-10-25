@@ -1,7 +1,11 @@
 import { CaptureRecord, DEFAULT_PROFILE, Facts, normalizeAnalysis, Profile, type StoredImage } from '@pixelpeeper/schema';
 import { Store, type ListQuery } from '@pixelpeeper/store';
 import { captureTitle, pageNameFrom, patternName, siteNameFromHost } from '@pixelpeeper/measure';
+import { analyze, AnalysisError, compareIdeas } from '@pixelpeeper/analysis';
+import { evaluate } from '@pixelpeeper/rules';
+import { LESSONS_MODE } from '../components/mode';
 import { callService, lastQuota, ServiceError, type Quota } from '../components/service';
+import { activeKey, activeModel, loadSettings, PROVIDERS, type Provider } from '../components/settings';
 /** Long edge cap for the screenshot; larger images are downscaled before upload. */
 const MAX_EDGE = 1568;
 /** Long edge for the saved thumbnail shown in the lesson header and library. */
@@ -27,6 +31,7 @@ type Msg =
   | { type: 'pp:profile:get' }
   | { type: 'pp:profile:set'; patch: Partial<Profile> }
   | { type: 'pp:quota' }
+  | { type: 'pp:test-key'; provider: Provider; key: string }
   | { type: 'pp:open-welcome' }
   | { type: 'pp:compare'; ids: string[]; mode: 'readAcross' | 'rationale'; direction?: string; extraNumbers?: number[] };
 
@@ -90,6 +95,26 @@ async function getProfile(): Promise<Profile> {
   return { ...DEFAULT_PROFILE, ...(stored.success ? stored.data : {}) };
 }
 
+/**
+ * Own-key mode: check a key without spending tokens by listing the provider's models.
+ * Returns null when valid, otherwise a message for the user.
+ */
+async function testKey(provider: Provider, key: string): Promise<string | null> {
+  const res = provider === 'groq'
+    ? await fetch('https://api.groq.com/openai/v1/models', { headers: { Authorization: `Bearer ${key}` } })
+    : await fetch('https://api.anthropic.com/v1/models?limit=1', { headers: { 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' } });
+  if (res.ok) return null;
+  if (res.status === 401 || res.status === 403) return `${PROVIDERS[provider].label} rejected this key.`;
+  return `${PROVIDERS[provider].label} answered ${res.status}. Try again in a moment.`;
+}
+
+/** Own-key mode: the saved key for the chosen provider, or an error reply for the UI. */
+async function ownKey() {
+  const settings = await loadSettings();
+  const key = activeKey(settings);
+  return key ? { settings, key } : { error: { error: `Add your ${PROVIDERS[settings.provider].label} API key in Pixel Peeper settings.`, code: 'no-key' } };
+}
+
 /** Make sure the page has a current content script (tabs opened before an update have none). */
 async function ensureContentScript(tabId: number): Promise<void> {
   try { await chrome.tabs.sendMessage(tabId, { type: 'pp:ping' }); }
@@ -102,11 +127,15 @@ const notifyLibrary = () => chrome.runtime.sendMessage({ type: 'pp:library:chang
 async function handle(msg: Msg, sender: chrome.runtime.MessageSender): Promise<unknown> {
   switch (msg.type) {
     case 'pp:status':
-      // Lessons are included (hosted service); measurements never need the network.
-      return { hasKey: true, quota: await lastQuota() };
+      // Hosted: lessons are included. Own key: lessons need a saved key. Measurements never need either.
+      return LESSONS_MODE === 'hosted' ? { hasKey: true, quota: await lastQuota() } : { hasKey: !!activeKey(await loadSettings()) };
     case 'pp:quota':
+      if (LESSONS_MODE !== 'hosted') return { quota: null };
       try { return { quota: (await callService<{ quota: Quota }>('/v1/quota')).quota }; }
       catch { return { quota: await lastQuota() }; }
+    case 'pp:test-key':
+      try { return { error: await testKey(msg.provider, msg.key.trim()) }; }
+      catch { return { error: `Could not reach ${PROVIDERS[msg.provider].label}. Check your connection.` }; }
     case 'pp:open-options':
       await chrome.runtime.openOptionsPage();
       return { ok: true };
@@ -117,7 +146,28 @@ async function handle(msg: Msg, sender: chrome.runtime.MessageSender): Promise<u
     case 'pp:analyze': {
       const facts = Facts.parse(msg.facts);
       const profile = await getProfile();
-      return await callService<{ analysis: unknown; quota: Quota }>('/v1/lesson', { method: 'POST', body: { facts, scope: msg.scope, image: msg.image, audience: profile.level } });
+      if (LESSONS_MODE === 'hosted') return await callService<{ analysis: unknown; quota: Quota }>('/v1/lesson', { method: 'POST', body: { facts, scope: msg.scope, image: msg.image, audience: profile.level } });
+      const own = await ownKey();
+      if ('error' in own) return own.error;
+      const analysis = await analyze({
+        provider: own.settings.provider, model: activeModel(own.settings), apiKey: own.key, audience: profile.level,
+        facts, results: evaluate(facts, { scope: msg.scope }), image: msg.image, scope: msg.scope, signal: AbortSignal.timeout(180_000),
+      });
+      return { analysis };
+    }
+    case 'pp:compare': {
+      const records = (await Promise.all(msg.ids.map((id) => store.get(id)))).filter((r): r is CaptureRecord => !!r);
+      if (records.length < 2) return { error: 'Two or three saved ideas are needed to compare.', code: 'api' };
+      const profile = await getProfile();
+      const items = records.map((r) => ({ facts: r.facts, scope: r.scope, pattern: r.pattern, site: r.page.siteName, page: r.page.pageName, analysis: normalizeAnalysis(r.analysis) }));
+      if (LESSONS_MODE === 'hosted') return await callService<{ insight: unknown; quota: Quota }>('/v1/compare', { method: 'POST', body: { mode: msg.mode, direction: msg.direction, extraNumbers: msg.extraNumbers, audience: profile.level, items } });
+      const own = await ownKey();
+      if ('error' in own) return own.error;
+      const insight = await compareIdeas({
+        provider: own.settings.provider, model: activeModel(own.settings), apiKey: own.key, audience: profile.level,
+        mode: msg.mode, direction: msg.direction, extraNumbers: msg.extraNumbers, items, signal: AbortSignal.timeout(180_000),
+      });
+      return { insight };
     }
     case 'pp:store:put': {
       const record = await store.put(CaptureRecord.parse(msg.record), msg.images);
@@ -219,8 +269,8 @@ export default defineBackground(() => {
     handle(msg, sender).then(sendResponse, (err: unknown) =>
       sendResponse({
         error: err instanceof Error ? err.message : String(err),
-        code: err instanceof ServiceError ? err.code : undefined,
-        retryAfter: err instanceof ServiceError ? err.extra.retryAfter : undefined,
+        code: err instanceof ServiceError || err instanceof AnalysisError ? err.code : undefined,
+        retryAfter: err instanceof ServiceError ? err.extra.retryAfter : err instanceof AnalysisError ? err.retryAfter : undefined,
         quota: err instanceof ServiceError ? err.extra.quota : undefined,
       }),
     );

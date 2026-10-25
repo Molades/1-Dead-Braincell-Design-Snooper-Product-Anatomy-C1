@@ -119,6 +119,8 @@ export interface CompareState {
   /** Which AI request is running, and the last error. */
   busy: 'readAcross' | 'rationale' | null;
   error: (LessonError & { mode: 'readAcross' | 'rationale' }) | null;
+  /** False only in own-key builds before a key is saved. */
+  hasKey: boolean;
 }
 
 /** "A:typography.fontSize" → "A · Font size 16px". */
@@ -134,7 +136,9 @@ function insightBlock(s: CompareState): string {
   if (s.busy === 'readAcross') return '<p class="pending">Comparing the ideas… This sends their measured values and earlier lessons as text, no screenshots.</p>';
   if (s.error?.mode === 'readAcross') return errorCard(s.error, Date.now()).replace('data-action="retry"', 'data-action="explain"');
   if (!s.readAcross) {
-    return '<p class="muted">Ask for a read-across of why these feel different and what each suits. Uses one AI request; the result is kept with this comparison.</p><button class="primary" data-action="explain">Explain the differences</button>';
+    return s.hasKey
+      ? '<p class="muted">Ask for a read-across of why these feel different and what each suits. Uses one AI request; the result is kept with this comparison.</p><button class="primary" data-action="explain">Explain the differences</button>'
+      : '<p class="muted">Add an API key in settings to get an AI read-across. The measured comparison above works without one.</p><button data-action="settings">Open settings</button>';
   }
   const r = s.readAcross;
   const point = (c: Insight['claims'][number]) => `<div class="point">${c.title ? `<strong>${esc(c.title)}</strong>` : ''}<p>${esc(c.text)}</p><div class="evs">${c.evidence.map((e) => letterChip(e, s.items)).join('')}</div></div>`;
@@ -147,7 +151,7 @@ function rationaleBlock(s: CompareState): string {
   const label = s.rationale?.source === 'user' ? '<span class="badge user">User authored</span>' : s.rationale ? '<span class="badge inferred">Inferred · AI draft</span>' : '';
   const action = s.busy === 'rationale' ? '<p class="pending">Drafting a rationale for your choices…</p>'
     : s.error?.mode === 'rationale' ? errorCard(s.error, Date.now()).replace('data-action="retry"', 'data-action="draft"')
-    : `<button data-action="draft">${s.rationale ? 'Redraft with AI' : 'Draft rationale with AI'}</button>`;
+    : s.hasKey ? `<button data-action="draft">${s.rationale ? 'Redraft with AI' : 'Draft rationale with AI'}</button>` : '';
   return `<div class="rationale-head">${label}${action}</div>
     <textarea data-rationale rows="5" placeholder="Why these choices belong together, where you will use them…">${esc(s.rationale?.text ?? '')}</textarea>
     <p class="muted">Editing an AI draft makes it yours: it is then exported as User authored.</p>`;

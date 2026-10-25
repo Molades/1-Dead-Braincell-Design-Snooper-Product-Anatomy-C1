@@ -1,4 +1,5 @@
 import { ruleById } from '@pixelpeeper/rules';
+import { LESSONS_MODE } from './mode';
 import { getFact, type Analysis, type Claim, type Facts, type RuleResult } from '@pixelpeeper/schema';
 import { icon, type IconName } from './icons';
 
@@ -248,8 +249,10 @@ export function progress(step: number, seconds: number, hasKey: boolean): string
 export interface LessonError { code?: string; message: string; retryAt?: number }
 
 const ERRORS: Record<string, { title: string; icon: IconName; actions: ('retry' | 'settings' | 'pick')[] }> = {
+  'no-key': { title: 'Add an API key for lessons', icon: 'key', actions: ['settings'] },
+  'invalid-key': { title: 'The API key was rejected', icon: 'key', actions: ['settings', 'retry'] },
   'rate-limited': { title: 'Rate limit reached', icon: 'hourglass-medium', actions: ['retry'] },
-  network: { title: "Couldn't reach Pixel Peeper", icon: 'wifi-slash', actions: ['retry'] },
+  network: { title: LESSONS_MODE === 'hosted' ? "Couldn't reach Pixel Peeper" : "Couldn't reach the AI provider", icon: 'wifi-slash', actions: ['retry'] },
   truncated: { title: 'The lesson came back incomplete', icon: 'warning', actions: ['retry'] },
   unparseable: { title: 'The lesson came back in the wrong shape', icon: 'warning', actions: ['retry'] },
   refused: { title: 'The model declined this selection', icon: 'warning', actions: ['pick'] },
@@ -272,9 +275,14 @@ export function errorCard(e: LessonError, now: number): string {
   return `<div class="err" role="alert">${tile(spec.icon, 'red')}<div><strong>${esc(spec.title)}</strong><p>${esc(e.message)}</p><div class="row">${spec.actions.map(button).join('')}</div><p class="note">Rules and Measurements still work.</p></div></div>`;
 }
 
-/** Lessons can't be requested (the page has an outdated copy of the extension): measurements still work. */
+/**
+ * Own key: lessons need a saved key. Hosted: lessons can't be requested from this page (an
+ * outdated copy of the extension). Measurements work either way.
+ */
 export function noKeyCard(): string {
-  return `<div class="err info">${tile('wifi-slash', 'indigo')}<div><strong>Lessons aren’t available here</strong><p>Reload this page to reconnect Pixel Peeper. Rules and Measurements work without a lesson.</p></div></div>`;
+  return LESSONS_MODE === 'hosted'
+    ? `<div class="err info">${tile('wifi-slash', 'indigo')}<div><strong>Lessons aren’t available here</strong><p>Reload this page to reconnect Pixel Peeper. Rules and Measurements work without a lesson.</p></div></div>`
+    : `<div class="err info">${tile('key', 'indigo')}<div><strong>Lessons need an API key</strong><p>Add a Groq or Anthropic key in settings. Rules and Measurements work without one.</p><div class="row"><button class="primary" data-action="settings">${icon('gear-six', 16)}Open settings</button></div></div></div>`;
 }
 
 // ---------------------------------------------------------------------------------------------

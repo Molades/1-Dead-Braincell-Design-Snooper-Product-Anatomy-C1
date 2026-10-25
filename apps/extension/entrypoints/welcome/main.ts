@@ -1,5 +1,7 @@
 import type { Goal, Level, Profile } from '@pixelpeeper/schema';
+import { LESSONS_MODE } from '../../components/mode';
 import type { Quota } from '../../components/service';
+import { loadSettings, saveSettings, type Provider, type Settings } from '../../components/settings';
 import { WELCOME_STEPS, poseUrl, headerView, stepView, type WelcomeState } from '../../components/welcome-view';
 import { mountPixelLandscape } from '../../components/pixel-landscape';
 import { createSound, type Cue } from '../../components/sound';
@@ -10,7 +12,8 @@ import './welcome.css';
 /** First-run setup. Every step is optional; answers are saved as you go. */
 
 const app = document.getElementById('app')!;
-const state: WelcomeState = { step: 0, goals: ['learn'], level: 'practising', dailyLimit: null, shortcut: null };
+let settings: Settings;
+const state: WelcomeState = { step: 0, goals: ['learn'], level: 'practising', provider: 'groq', hasKey: {}, keyStatus: { kind: 'idle' }, dailyLimit: null, shortcut: null };
 const LAST = WELCOME_STEPS.length - 1;
 
 // ---------------------------------------------------------------------------------------------
@@ -87,9 +90,12 @@ function syncChrome() {
   document.body.dataset.step = String(state.step);
 }
 
-/** Re-render the current step in place. No entrance motion. */
+/** Re-render the current step in place (key status, provider switch), keeping a typed key. No entrance motion. */
 function patch() {
+  const typed = (document.getElementById('key') as HTMLInputElement | null)?.value ?? '';
   stepEl.innerHTML = stepView(state);
+  const key = document.getElementById('key') as HTMLInputElement | null;
+  if (key && typed && state.keyStatus.kind !== 'ok') key.value = typed;
   afterRender(false);
 }
 
@@ -387,10 +393,40 @@ async function go(where: string, el: HTMLElement) {
   if (where === 'sound') return toggleSound();
 }
 
+/** Own-key mode: test the key for free (lists models), then save it. */
+async function testKey() {
+  const input = document.getElementById('key') as HTMLInputElement;
+  const key = input.value.trim() || settings.keys[state.provider] || '';
+  if (!key) { state.keyStatus = { kind: 'error', message: 'Paste a key first.' }; patch(); shake(); return; }
+  state.keyStatus = { kind: 'testing' };
+  patch();
+  const res = await ask<{ error: string | null }>({ type: 'pp:test-key', provider: state.provider, key });
+  if (state.step !== 2) return;
+  if (res.error) { state.keyStatus = { kind: 'error', message: res.error }; patch(); shake(); sfx('bonk'); return; }
+  settings = { ...settings, provider: state.provider, keys: { ...settings.keys, [state.provider]: key } };
+  await saveSettings(settings);
+  state.hasKey = { ...state.hasKey, [state.provider]: true };
+  state.keyStatus = { kind: 'ok', message: 'Key works and is saved. Lessons are on.' };
+  patch();
+  sfx('chime');
+}
+
+/** One short horizontal shake on the key field: the error is about that field. */
+function shake() {
+  const field = q('.field');
+  if (!field || reduced.matches) return;
+  field.animate(
+    [{ transform: 'none' }, { transform: 'translateX(-6px)' }, { transform: 'translateX(5px)' }, { transform: 'translateX(-3px)' }, { transform: 'translateX(2px)' }, { transform: 'none' }],
+    { duration: 380, easing: EASE_OUT },
+  );
+  (document.getElementById('key') as HTMLInputElement | null)?.focus();
+}
+
 app.addEventListener('click', (e) => {
   const t = (e.target as Element).closest<HTMLButtonElement>('button');
   if (!t || t.disabled) return;
   if (t.dataset.go) void go(t.dataset.go, t);
+  if (t.dataset.key === 'test') void testKey();
   if (t.dataset.demo === 'replay') void playPick(++run);
 });
 
@@ -405,7 +441,16 @@ app.addEventListener('change', (e) => {
   } else if (input.name === 'level') {
     state.level = input.value as Level;
     void saveProfile({ level: state.level });
+  } else if (input.name === 'provider') {
+    state.provider = input.value as Provider;
+    state.keyStatus = { kind: 'idle' };
+    patch();
+    app.querySelector<HTMLInputElement>(`input[name=provider][value=${state.provider}]`)?.focus();
   }
+});
+
+app.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && (e.target as HTMLElement).id === 'key') { e.preventDefault(); void testKey(); }
 });
 
 
@@ -413,9 +458,14 @@ void (async () => {
   const { profile } = await ask<{ profile: Profile }>({ type: 'pp:profile:get' });
   state.goals = profile.goals;
   state.level = profile.level;
-  // Registers this install with the service and reads the allowance (works offline too: just unknown).
-  const q = (await ask<{ quota?: Quota | null }>({ type: 'pp:quota' }).catch(() => null))?.quota;
-  state.dailyLimit = q?.limit ?? null;
+  settings = await loadSettings();
+  state.provider = settings.provider;
+  state.hasKey = { groq: !!settings.keys.groq, anthropic: !!settings.keys.anthropic };
+  if (LESSONS_MODE === 'hosted') {
+    // Registers this install with the service and reads the allowance (works offline too: just unknown).
+    const quota = (await ask<{ quota?: Quota | null }>({ type: 'pp:quota' }).catch(() => null))?.quota;
+    state.dailyLimit = quota?.limit ?? null;
+  }
   const commands = await chrome.commands.getAll();
   state.shortcut = commands.find((c) => c.name === 'pick')?.shortcut || null;
   renderShell();

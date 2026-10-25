@@ -1,5 +1,8 @@
 import type { Goal, Level } from '@pixelpeeper/schema';
+import { DEFAULT_MODELS } from '@pixelpeeper/analysis';
 import { esc, inferredTag, measuredTag } from './lesson';
+import { LESSONS_MODE } from './mode';
+import { PROVIDERS, type Provider } from './settings';
 import { icon } from './icons';
 import { liveDetective } from './live-eyes';
 
@@ -27,7 +30,11 @@ export interface WelcomeState {
   step: number;
   goals: Goal[];
   level: Level;
-  /** Lessons per day included with the hosted service, once known. */
+  /** Own-key mode: chosen provider, which providers have a saved key, and the key test. */
+  provider: Provider;
+  hasKey: Partial<Record<Provider, boolean>>;
+  keyStatus: { kind: 'idle' | 'testing' | 'ok' | 'error'; message?: string };
+  /** Hosted mode: lessons per day included, once known. */
   dailyLimit: number | null;
   shortcut: string | null;
 }
@@ -110,7 +117,30 @@ function whatYouWant(s: WelcomeState): string {
     ${nav(s)}`;
 }
 
-function aiLessons(s: WelcomeState): string {
+function keyStatus(s: WelcomeState): string {
+  const st = s.keyStatus;
+  const mark = st.kind === 'ok' ? ICON.check : st.kind === 'error' ? ICON.alert : '';
+  return `<p class="status ${st.kind}" role="status">${mark}<span>${esc(st.message ?? '')}</span></p>`;
+}
+
+function ownKeyLessons(s: WelcomeState): string {
+  const info = PROVIDERS[s.provider];
+  const st = s.keyStatus;
+  return `<div class="ask" data-reveal>${mascot('laptop', 'speaker')}<div class="bubble"><h1 tabindex="-1">Lessons need an AI key</h1><p>Measurements and rule checks work without one. For written lessons, use your own key. It is stored on this device and sent only to ${esc(info.host)}.</p></div></div>
+    <fieldset class="choices providers" data-reveal><legend>Provider</legend>${(Object.keys(PROVIDERS) as Provider[]).map((p) => `<label class="choice"><input type="radio" name="provider" value="${p}" ${s.provider === p ? 'checked' : ''}><span class="dot"></span><span class="text"><strong>${PROVIDERS[p].label}</strong><em>${s.hasKey[p] ? 'Key saved' : `Default model ${DEFAULT_MODELS[p]}`}</em></span></label>`).join('')}</fieldset>
+    <div class="keybox" data-reveal>
+      <label class="field ${st.kind}"><span>${info.label} API key</span><input id="key" type="password" autocomplete="off" spellcheck="false" placeholder="${s.hasKey[s.provider] ? 'Saved. Paste a new key to replace it.' : `${info.keyPrefix}…`}"></label>
+      <div class="row"><button class="secondary" data-key="test" ${st.kind === 'testing' ? 'disabled aria-busy="true"' : ''}>${st.kind === 'testing' ? '<span class="spinner" aria-hidden="true"></span><span>Testing…</span>' : '<span>Save and test</span>'}</button>${keyStatus(s)}</div>
+      <p class="muted">Create one at ${esc(info.console)}. Usage is billed to your account there. Testing a key is free: it only lists the available models.</p>
+    </div>
+    <p class="what" data-reveal>${ICON.lock}<span>When you choose <b>Get lesson</b>, Pixel Peeper sends a screenshot of your selection and its measured values to ${esc(info.label)}, using your key. Nothing is sent while you hover or pick, and the page address is not included.</span></p>
+    ${nav(s, s.hasKey[s.provider] ? 'Next' : 'Measure only for now')}`;
+}
+
+/** Step 3 depends on where lessons come from (see mode.ts). */
+const aiLessons = (s: WelcomeState) => (LESSONS_MODE === 'hosted' ? hostedLessons(s) : ownKeyLessons(s));
+
+function hostedLessons(s: WelcomeState): string {
   const allowance = s.dailyLimit ? `You get <b>${s.dailyLimit} AI lessons a day</b>, free.` : 'AI lessons are included, free, with a daily allowance.';
   return `<div class="ask" data-reveal>${mascot('laptop', 'speaker')}<div class="bubble"><h1 tabindex="-1">Lessons are included</h1><p>${allowance} No account or API key needed.</p></div></div>
     <ul class="explain" data-reveal>

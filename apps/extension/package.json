@@ -1,15 +1,17 @@
 {
   "name": "@pixelpeeper/extension",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "wxt",
     "build": "wxt build",
     "typecheck": "wxt prepare && tsc --noEmit",
-    "postinstall": "wxt prepare"
+    "postinstall": "wxt prepare",
+    "zip": "wxt zip"
   },
   "dependencies": {
+    "@pixelpeeper/analysis": "*",
     "@pixelpeeper/measure": "*",
     "@pixelpeeper/rules": "*",
     "@pixelpeeper/schema": "*",

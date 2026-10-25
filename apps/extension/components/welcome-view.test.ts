@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { welcomeView, type WelcomeState } from './welcome-view';
 
-const base: WelcomeState = { step: 0, goals: ['learn'], level: 'practising', dailyLimit: 10, shortcut: '⌥P' };
+const base: WelcomeState = { step: 0, goals: ['learn'], level: 'practising', provider: 'groq', hasKey: {}, keyStatus: { kind: 'idle' }, dailyLimit: 10, shortcut: '⌥P' };
 
 describe('welcome', () => {
   it('explains Measured and Inferred first, with progress', () => {
@@ -18,14 +18,17 @@ describe('welcome', () => {
     expect(html).not.toMatch(/value="learn" checked/);
     expect(html).toMatch(/value="senior" checked/);
   });
-  it('says lessons are included, with the daily allowance and what is sent, and asks for no key', () => {
+  it('asks for the user’s own key by default, says what is sent, and lets people skip it', () => {
     const html = welcomeView({ ...base, step: 2 });
-    expect(html).toContain('Lessons are included');
-    expect(html).toContain('10 AI lessons a day');
-    expect(html).toContain('No account or API key needed');
-    expect(html).toContain('Screenshots are not stored');
-    expect(html).not.toContain('type="password"');
-    expect(welcomeView({ ...base, step: 2, dailyLimit: null })).toContain('daily allowance');
+    expect(html).toContain('Lessons need an AI key');
+    expect(html).toContain('type="password"');
+    expect(html).toContain('Measure only for now');
+    expect(html).toContain('Nothing is sent while you hover or pick');
+    expect(welcomeView({ ...base, step: 2, hasKey: { groq: true } })).toContain('<span>Next</span>');
+  });
+  it('shows a saved key and a failed test differently', () => {
+    expect(welcomeView({ ...base, step: 2, keyStatus: { kind: 'ok', message: 'Key works' } })).toMatch(/status ok/);
+    expect(welcomeView({ ...base, step: 2, keyStatus: { kind: 'testing' } })).toContain('aria-busy="true"');
   });
   it('gives the sample lesson real values to replace and a detective per step', () => {
     const html = welcomeView(base);
