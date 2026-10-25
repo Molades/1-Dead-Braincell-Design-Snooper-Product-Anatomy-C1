@@ -293,7 +293,11 @@ main::before { content: ""; position: absolute; left: 0; right: 0; top: -64px; h
 .foot nav { display: flex; flex-wrap: wrap; gap: 4px 20px; font-size: 14px; }
 .foot nav a { text-decoration: none; color: var(--muted); }
 .foot nav a:hover { color: var(--ink); }
-.foot p { margin: 0 0 0 auto; font-size: 12.5px; color: var(--faint); }
+.foot-bottom { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 32px; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--line); }
+.foot p { margin: 0; font-size: 12.5px; color: var(--faint); }
+.foot .credits { font-size: 14px; color: var(--muted); }
+.credits a { color: var(--ink); font-weight: 500; text-decoration: none; background: linear-gradient(var(--line-strong), var(--line-strong)) 0 100% / 100% 1px no-repeat; transition: color .16s var(--ease-out), background-size .16s var(--ease-out); }
+@media (hover: hover) and (pointer: fine) { .credits a:hover { color: var(--accent-ink); background-image: linear-gradient(var(--accent), var(--accent)); } }
 
 /* Scroll reveal: quiet ease-out arrivals. */
 .js [data-reveal] { opacity: 0; transform: translateY(14px); transition: opacity .6s var(--ease-out), transform .7s var(--ease-out); }
@@ -328,10 +332,9 @@ main::before { content: ""; position: absolute; left: 0; right: 0; top: -64px; h
   .ledger .row { grid-template-columns: minmax(0, 1fr); gap: 6px; }
   .closing-card { flex-direction: column; align-items: flex-start; padding: 28px 24px; gap: 18px; }
   .closing-card img { width: 110px; }
-  .foot p { margin-left: 0; }
 }
 @media (max-width: 520px) {
-  .wrap { padding: 0 16px; }
+  .wrap { padding-left: 16px; padding-right: 16px; }
   .lead { font-size: 17px; }
   .demo { padding-bottom: 0; }
   .site { padding: 24px 20px 40px; }
