@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pixel Peeper</title>
+  <meta name="description" content="Pixel Peeper is a Chrome extension that turns any website into a design lesson. Pick an element, see what was measured, read why it works, and keep it with its source.">
+  <meta name="theme-color" content="#f7f8f8">
+  <link rel="icon" href="assets/icon.png">
+  <link rel="preload" href="assets/fonts/schibsted-grotesk.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/roboto.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="site.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="top" id="top">
+    <div class="wrap top-in">
+      <a class="brand" href="#top" aria-label="Pixel Peeper, back to top">
+        <img src="assets/poses/peek.png" alt="" width="52" height="27">
+        <span>Pixel Peeper</span>
+      </a>
+      <nav class="links" aria-label="Sections">
+        <a href="#about">About</a>
+        <a href="#features">Features</a>
+        <a href="#guide">How to</a>
+        <a href="#faq">FAQ</a>
+      </nav>
+      <a class="btn primary small" href="#install" data-store>Add to Chrome</a>
+    </div>
+  </header>
+
+  <main id="main">
+    <!-- Hero ---------------------------------------------------------------------------------------->
+    <section class="hero wrap">
+      <div class="hero-copy">
+        <p class="eyebrow"><span class="pulse" aria-hidden="true"></span>Chrome extension for designers</p>
+        <h1>Inspect Element for design language.</h1>
+        <p class="lead">Pick anything on a website and Pixel Peeper tells you what it measured, why it works, and keeps the idea with its source, so you can reuse it in your own work.</p>
+        <div class="cta-row">
+          <a class="btn primary" href="#install" data-store>Add to Chrome <i data-icon="arrow-right"></i></a>
+          <a class="btn secondary" href="#guide">See how it works</a>
+        </div>
+        <ul class="facts" aria-label="At a glance">
+          <li><i data-icon="check-circle"></i>Free, 10 AI lessons a day</li>
+          <li><i data-icon="lock-simple"></i>No account</li>
+          <li><i data-icon="browser"></i>Never shrinks the page</li>
+        </ul>
+      </div>
+
+      <figure class="demo" id="demo" aria-label="Example: picking parts of a pricing card and reading their lessons">
+        <img class="peeker" src="assets/poses/peek.png" alt="" width="132" height="67">
+        <div class="browser">
+          <div class="browser-bar" aria-hidden="true"><i></i><i></i><i></i><span class="url">studio.example/pricing</span></div>
+          <div class="site" data-stage>
+            <div class="plan" data-pick="card" tabindex="0" aria-label="Pick the card">
+              <p class="plan-name" data-pick="label" tabindex="0" aria-label="Pick the plan label">Studio</p>
+              <p class="plan-price" data-pick="price" tabindex="0" aria-label="Pick the price"><b>$24</b>per month</p>
+              <ul class="plan-list">
+                <li>Unlimited projects</li>
+                <li>Shared libraries</li>
+                <li>Priority support</li>
+              </ul>
+              <span class="plan-cta" data-pick="button" tabindex="0" role="button" aria-label="Pick the button">Start free trial</span>
+            </div>
+            <div class="pick" aria-hidden="true"><span class="wash"></span><span class="tag"></span></div>
+          </div>
+        </div>
+
+        <div class="lesson" aria-live="polite">
+          <div class="lesson-head">
+            <img src="assets/poses/peek-face.png" alt="" width="34" height="17">
+            <strong data-l="title">Button</strong>
+            <span data-l="meta">studio.example</span>
+          </div>
+          <p class="headline" data-l="headline"></p>
+          <div class="tags">
+            <span class="tag-m"><i data-icon="shield-check"></i>Measured</span>
+            <div class="chips" data-l="chips"></div>
+          </div>
+          <div class="tags">
+            <span class="tag-i"><i data-icon="sparkle"></i>Inferred</span>
+            <p class="why" data-l="why"></p>
+          </div>
+        </div>
+        <figcaption class="demo-hint"><i data-icon="cursor-click"></i>Hover or tab through the card to pick a part of it.</figcaption>
+      </figure>
+    </section>
+
+    <!-- About --------------------------------------------------------------------------------------->
+    <section class="section" id="about" aria-labelledby="about-h">
+      <div class="wrap about">
+        <div class="about-copy">
+          <p class="kicker">About</p>
+          <h2 id="about-h">You noticed it works. Now find out why.</h2>
+          <p>Every designer has a folder of screenshots they never open again. The screenshot keeps how something looked, but loses the reason: the type scale, the spacing rhythm, the contrast, the one decision that made it feel right.</p>
+          <p>DevTools shows you four hundred properties and no opinion. Pixel Peeper picks the part you care about, measures it with code, then writes a short lesson on why it works. Every claim says where it came from, so you always know what is fact and what is interpretation.</p>
+        </div>
+        <img class="about-art" src="assets/poses/magnify.png" alt="The Pixel Peeper detective looking through a magnifying glass" width="220" height="185" loading="lazy">
+      </div>
+
+      <div class="wrap">
+        <div class="evidence">
+          <div class="ev">
+            <span class="tag-m big"><i data-icon="shield-check"></i>Measured</span>
+            <h3>Read from the page by code</h3>
+            <p>Font sizes, weights, colours, spacing, sizes, contrast ratios and rule checks. Exact values, never guessed. If something can't be measured, it says so.</p>
+            <div class="chips"><span class="chip"><span class="mdot"></span>Size<b>32px</b></span><span class="chip"><span class="mdot"></span>Contrast<b>16.1:1</b></span><span class="chip"><span class="mdot"></span>Gap<b>12px</b></span></div>
+          </div>
+          <div class="ev">
+            <span class="tag-i big"><i data-icon="sparkle"></i>Inferred</span>
+            <h3>The AI's interpretation</h3>
+            <p>Why the choice works, what it's doing for the reader, and how you could borrow it. Clearly labelled as reading, not fact, and always tied to the evidence beneath it.</p>
+            <p class="quote">“The price is 2.5 times the body size, so it's read before the plan name or the features.”</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="wrap principles">
+        <div class="pr"><span class="tile"><i data-icon="browser"></i></span><h3>The website stays the star</h3><p>No side panel. The detective and the lesson float above the page, so the layout you're studying is never squeezed.</p></div>
+        <div class="pr"><span class="tile"><i data-icon="hand-pointing"></i></span><h3>Nothing leaves until you ask</h3><p>Hovering and picking happen on your computer. Only <b>Get lesson</b> sends the selection to be explained.</p></div>
+        <div class="pr"><span class="tile"><i data-icon="book-open-text"></i></span><h3>A lesson before a data dump</h3><p>One clear idea you can read in under a minute, with the full measurements a tab away when you want them.</p></div>
+      </div>
+    </section>
+
+    <!-- Features ------------------------------------------------------------------------------------>
+    <section class="section tint" id="features" aria-labelledby="features-h">
+      <div class="wrap">
+        <div class="section-head">
+          <p class="kicker">Features</p>
+          <h2 id="features-h">From one good detail to a design direction.</h2>
+          <p>Pick, learn, keep, compare, export. Each step works on its own, and together they turn browsing into a reference library.</p>
+        </div>
+
+        <div class="features">
+          <article class="feature wide">
+            <span class="tile"><i data-icon="crosshair-simple"></i></span>
+            <h3>Pick anything</h3>
+            <p>Hover to preview, click to select. The outline snaps to sensible groups; use <kbd>↑</kbd> <kbd>↓</kbd> for bigger or smaller, hold <kbd>⌥</kbd> for the exact element, or pick the whole visible page.</p>
+            <div class="mini-pick" aria-hidden="true"><span class="crumb">Section</span><i data-icon="caret-down"></i><span class="crumb">Card</span><i data-icon="caret-down"></i><span class="crumb now">Button</span><span class="size">164 × 40</span></div>
+          </article>
+          <article class="feature">
+            <span class="tile"><i data-icon="book-open-text"></i></span>
+            <h3>Lessons tuned to you</h3>
+            <p>Tell it your level once. Students get terms explained inline; senior designers get terse lessons with the trade-offs first.</p>
+          </article>
+          <article class="feature">
+            <span class="tile"><i data-icon="list-checks"></i></span>
+            <h3>Rule checks</h3>
+            <p>Contrast, tap target size, line length and more, checked only where they apply. Passes and fails are shown with the measured value.</p>
+          </article>
+          <article class="feature">
+            <span class="tile"><i data-icon="ruler"></i></span>
+            <h3>Annotated captures</h3>
+            <p>Open any capture full screen with toggleable layers for spacing, type, colour, targets and issues, drawn from real geometry.</p>
+          </article>
+          <article class="feature">
+            <span class="tile"><i data-icon="books"></i></span>
+            <h3>A library with sources</h3>
+            <p>Save ideas with a title, note and collection. Find them by site or pattern next week, and jump back to the original page.</p>
+          </article>
+          <article class="feature">
+            <span class="tile"><i data-icon="scales"></i></span>
+            <h3>Compare two or three</h3>
+            <p>Put references side by side. Differing values are highlighted and a short read-across explains why they feel different.</p>
+          </article>
+          <article class="feature wide">
+            <span class="tile"><i data-icon="export"></i></span>
+            <h3>Build a direction, export it</h3>
+            <p>Borrow type from one reference and colour from another. Contrast is recomputed for the new pairings, then export with every value still labelled and linked to its source.</p>
+            <div class="files" aria-label="Export formats"><span><i data-icon="code"></i>DESIGN.md</span><span><i data-icon="code"></i>tokens.json</span><span><i data-icon="code"></i>styles.css</span></div>
+          </article>
+        </div>
+
+        <div class="detective">
+          <div class="poses" aria-hidden="true">
+            <img src="assets/poses/laptop.png" alt="" width="96" height="80" loading="lazy">
+            <img src="assets/poses/idea.png" alt="" width="96" height="80" loading="lazy">
+            <img src="assets/poses/getaway.png" alt="" width="96" height="80" loading="lazy">
+            <img src="assets/poses/sleep.png" alt="" width="96" height="80" loading="lazy">
+          </div>
+          <div>
+            <h3>And a small detective for company</h3>
+            <p>He peeks from the corner of the page, types while a lesson is written, lights up when it's ready and runs off with your saved idea. Quiet sounds play only after you click, and one switch turns them off.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- How-to guide -------------------------------------------------------------------------------->
+    <section class="section" id="guide" aria-labelledby="guide-h">
+      <div class="wrap">
+        <div class="section-head">
+          <p class="kicker">How to</p>
+          <h2 id="guide-h">Your first lesson in two minutes.</h2>
+          <p>Seven steps, and only the first two happen once.</p>
+        </div>
+
+        <ol class="steps">
+          <li class="step" id="install">
+            <span class="num">1</span>
+            <div>
+              <h3>Install and pin</h3>
+              <p>Add Pixel Peeper to Chrome, then open the puzzle-piece menu in the toolbar and pin it so the icon is always one click away.</p>
+              <div class="toolbar" aria-hidden="true"><i data-icon="puzzle-piece"></i><span class="tb-item"><img src="assets/poses/peek-face.png" alt="" width="28" height="14">Pixel Peeper</span><i data-icon="push-pin" class="pinned"></i></div>
+            </div>
+          </li>
+          <li class="step">
+            <span class="num">2</span>
+            <div>
+              <h3>Tell it about you</h3>
+              <p>A welcome tab opens after installing. Choose your goals (learn why designs work, build a library, check accessibility, pull tokens) and your level. Every step can be skipped.</p>
+            </div>
+          </li>
+          <li class="step">
+            <span class="num">3</span>
+            <div>
+              <h3>Pick something</h3>
+              <p>On any website, click the icon or press <kbd>⌥</kbd> <kbd>P</kbd>. The detective appears in the corner. Choose <b>Pick</b>, hover until the outline fits what you like, then click.</p>
+              <ul class="keys">
+                <li><kbd>↑</kbd><kbd>↓</kbd><span>Bigger or smaller target</span></li>
+                <li><kbd>⌥</kbd><span>Hold for the exact element</span></li>
+                <li><kbd>Esc</kbd><span>Stop picking</span></li>
+              </ul>
+            </div>
+          </li>
+          <li class="step">
+            <span class="num">4</span>
+            <div>
+              <h3>Get the lesson</h3>
+              <p>Press <b>Get lesson</b> (or <kbd>Enter</kbd>). The lesson window has three tabs: <b>Lesson</b> for the why, <b>Rules</b> for passes and fails, and <b>Measurements</b> for every value. Rules and measurements are ready before the AI finishes.</p>
+            </div>
+          </li>
+          <li class="step">
+            <span class="num">5</span>
+            <div>
+              <h3>Save the idea</h3>
+              <p>Choose <b>Save idea</b>. The title is filled in for you; add a note or a collection if you like. Lessons you don't save stay in <b>Recent</b> for seven days.</p>
+            </div>
+          </li>
+          <li class="step">
+            <span class="num">6</span>
+            <div>
+              <h3>Compare in the Library</h3>
+              <p>Open the <b>Library</b> from the detective's menu. Select two or three ideas and choose <b>Compare</b> to see their values side by side and why they feel different.</p>
+            </div>
+          </li>
+          <li class="step">
+            <span class="num">7</span>
+            <div>
+              <h3>Make a direction and export</h3>
+              <p>For each category, borrow from A, B or C, or keep your own. Edit the drafted rationale, then export DESIGN.md, tokens.json or CSS to use in your project or hand to a teammate.</p>
+            </div>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- Privacy ------------------------------------------------------------------------------------->
+    <section class="section tint" id="privacy" aria-labelledby="privacy-h">
+      <div class="wrap privacy">
+        <div>
+          <p class="kicker">Privacy</p>
+          <h2 id="privacy-h">Your library lives in your browser.</h2>
+          <p>Captures, screenshots, lessons, notes and collections are stored locally. We don't have a copy, and uninstalling deletes them.</p>
+          <img class="privacy-art" src="assets/poses/box.png" alt="" width="150" height="125" loading="lazy">
+        </div>
+        <div class="ledger">
+          <div class="row"><span class="state stays"><i data-icon="lock-simple"></i>Stays on your device</span><p>Everything you hover and pick, and everything you save.</p></div>
+          <div class="row"><span class="state sent"><i data-icon="arrow-up-right"></i>Sent on Get lesson</span><p>A screenshot of the visible selection, its measured values and rule results, and your chosen level.</p></div>
+          <div class="row"><span class="state never"><i data-icon="x-circle"></i>Never sent</span><p>The page address, your name or email, or your browsing history.</p></div>
+          <div class="row"><span class="state never"><i data-icon="x-circle"></i>Never stored</span><p>Our server passes the request to the AI model and keeps neither the screenshot nor the lesson.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ ----------------------------------------------------------------------------------------->
+    <section class="section" id="faq" aria-labelledby="faq-h">
+      <div class="wrap faq-wrap">
+        <div class="section-head">
+          <p class="kicker">FAQ</p>
+          <h2 id="faq-h">Questions, answered.</h2>
+        </div>
+        <div class="faq">
+          <details name="faq" open>
+            <summary>Is Pixel Peeper free?<i data-icon="caret-down"></i></summary>
+            <p>Yes. Picking, measurements, rule checks, the Library, Compare and export are free without limits. AI lessons are included too, with a daily allowance of 10 that resets every day at midnight UTC.</p>
+          </details>
+          <details name="faq">
+            <summary>Do I need an account or an API key?<i data-icon="caret-down"></i></summary>
+            <p>No. There are no accounts. The extension creates an anonymous install ID to keep track of the daily allowance, and lessons run through Pixel Peeper's own server.</p>
+          </details>
+          <details name="faq">
+            <summary>What happens when I run out of lessons for the day?<i data-icon="caret-down"></i></summary>
+            <p>Everything measured keeps working: Rules and Measurements still fill in, and you can save, compare and export as usual. Only the written lesson waits until the next day.</p>
+          </details>
+          <details name="faq">
+            <summary>What's the difference between Measured and Inferred?<i data-icon="caret-down"></i></summary>
+            <p><b>Measured</b> values are read from the page by code: exact sizes, colours, spacing and rule results. <b>Inferred</b> is the AI's reading of why those choices work. Each claim carries its label, so you can trust the numbers and judge the opinion.</p>
+          </details>
+          <details name="faq">
+            <summary>Does it change the website I'm looking at?<i data-icon="caret-down"></i></summary>
+            <p>No. Pixel Peeper floats above the page in its own isolated layer, never reserves width, and doesn't load its fonts or styles into the site. Close it and the page is exactly as it was.</p>
+          </details>
+          <details name="faq">
+            <summary>Does it work on every website?<i data-icon="caret-down"></i></summary>
+            <p>It works on ordinary websites. Chrome doesn't let extensions run on its own pages (like settings or the Web Store) or some protected pages; the icon shows a short note when that happens. After installing, reload any tabs that were already open.</p>
+          </details>
+          <details name="faq">
+            <summary>Which browsers are supported?<i data-icon="caret-down"></i></summary>
+            <p>Chrome on desktop today. Other Chromium browsers that install Chrome extensions, such as Edge, Arc and Brave, are likely to work but aren't tested yet.</p>
+          </details>
+          <details name="faq">
+            <summary>Can I use the exports in Figma or my codebase?<i data-icon="caret-down"></i></summary>
+            <p>Yes. <code>tokens.json</code> imports into token plugins, <code>styles.css</code> gives you custom properties, and <code>DESIGN.md</code> is a readable direction for teammates or AI coding tools. Every value keeps its source link.</p>
+          </details>
+          <details name="faq">
+            <summary>Is it ok to learn from other people's websites?<i data-icon="caret-down"></i></summary>
+            <p>Pixel Peeper is for studying how design decisions work, the way you'd sketch from a book. It keeps the source with every idea so you can credit and revisit it. Borrow principles and values, not whole designs.</p>
+          </details>
+          <details name="faq">
+            <summary>How do I turn the sounds off?<i data-icon="caret-down"></i></summary>
+            <p>Open the detective's menu and switch sound off; it's remembered. Sounds never play until you've clicked something of ours, and never in a hidden tab.</p>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <!-- Closing CTA --------------------------------------------------------------------------------->
+    <section class="wrap closing">
+      <div class="closing-card">
+        <img src="assets/poses/think.png" alt="" width="150" height="125" loading="lazy">
+        <div>
+          <h2>Start a library of reasons, not screenshots.</h2>
+          <p>Free for Chrome. Your first lesson takes about two minutes.</p>
+        </div>
+        <a class="btn primary" href="#install" data-store>Add to Chrome <i data-icon="arrow-right"></i></a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <div class="wrap foot-in">
+      <div class="brand"><img src="assets/poses/peek.png" alt="" width="44" height="23"><span>Pixel Peeper</span></div>
+      <nav aria-label="Footer">
+        <a href="#about">About</a><a href="#features">Features</a><a href="#guide">How to</a><a href="#faq">FAQ</a><a href="#privacy">Privacy</a>
+      </nav>
+      <p>Fonts: Schibsted Grotesk, Roboto, JetBrains Mono (SIL OFL). Icons: Phosphor (MIT).</p>
+    </div>
+  </footer>
+
+  <script src="icons.js"></script>
+  <script src="site.js"></script>
+</body>
+</html>
