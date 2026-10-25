@@ -30,7 +30,7 @@ addEventListener('scroll', onScroll, { passive: true });
 onScroll();
 
 // ---- Reveal on scroll ----------------------------------------------------------------------------------
-const revealTargets = document.querySelectorAll('.section-head, .about-copy, .ev, .pr, .feature, .detective, .step, .ledger, .faq, .closing-card');
+const revealTargets = document.querySelectorAll('.watch-head, .player, .section-head, .about-copy, .ev, .pr, .feature, .detective, .step, .ledger, .faq, .closing-card');
 if ('IntersectionObserver' in window && !reduced) {
   const io = new IntersectionObserver((entries) => {
     for (const e of entries) if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
@@ -40,6 +40,17 @@ if ('IntersectionObserver' in window && !reduced) {
     el.style.transitionDelay = `${(i % 3) * 60}ms`;
     io.observe(el);
   });
+}
+
+// ---- Film: a big play button over the poster; native controls once it starts -------------------------
+const film = document.querySelector('.screen video');
+const play = document.querySelector('.screen .play');
+if (film && play) {
+  film.controls = false;
+  play.hidden = false;
+  play.addEventListener('click', () => { film.controls = true; film.play(); });
+  film.addEventListener('play', () => { play.hidden = true; });
+  film.addEventListener('ended', () => { film.controls = false; film.load(); play.hidden = false; });
 }
 
 // ---- Hero demo -----------------------------------------------------------------------------------------
