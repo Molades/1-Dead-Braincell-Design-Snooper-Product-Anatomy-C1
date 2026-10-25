@@ -6,3 +6,9 @@ dist
 .env
 .env.*
 !.env.example
+
+# Local tooling and large media kept out of git
+.claude/
+docs/launch/
+/*.mp4
+*.wav

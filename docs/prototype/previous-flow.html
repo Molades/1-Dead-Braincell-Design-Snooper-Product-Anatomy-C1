@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pixel Peeper — UI flow prototype</title>
+<style>
+:root{--ink:#16151a;--mute:#6b6a76;--line:#e6e4ec;--bg:#f6f5f9;--card:#fff;--acc:#6d28d9;--acc-soft:#ede9fe;
+--meas:#0f766e;--meas-bg:#ccfbf1;--inf:#b45309;--inf-bg:#fef3c7;--bad:#b91c1c;--ok:#15803d;font:14px/1.5 -apple-system,BlinkMacSystemFont,"Inter",system-ui,sans-serif;color:var(--ink)}
+*{box-sizing:border-box}body{margin:0;background:#dcdae3;height:100vh;display:flex;flex-direction:column}
+button{font:inherit;cursor:pointer}
+/* flow stepper (prototype-only chrome) */
+.flow{display:flex;gap:6px;align-items:center;padding:10px 16px;background:#16151a;color:#fff;font-size:12px;flex-wrap:wrap}
+.flow b{opacity:.6;margin-right:6px;font-weight:500}
+.flow button{background:#2a2833;color:#ddd;border:0;border-radius:99px;padding:4px 12px}
+.flow button.on{background:var(--acc);color:#fff}
+.stage{flex:1;display:flex;min-height:0}
+/* mock browser */
+.browser{flex:1;display:flex;flex-direction:column;min-width:0;margin:12px 0 12px 12px;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px #0002}
+.bar{display:flex;gap:8px;align-items:center;padding:8px 12px;background:#efedf3;border-bottom:1px solid var(--line)}
+.dots i{display:inline-block;width:10px;height:10px;border-radius:50%;background:#c9c6d2;margin-right:5px}
+.url{flex:1;background:#fff;border-radius:99px;padding:3px 14px;color:var(--mute);font-size:12px}
+.page{position:relative;flex:1;overflow:auto;background:#fff}
+.pick-hint{position:absolute;left:50%;top:12px;transform:translateX(-50%);background:var(--ink);color:#fff;border-radius:99px;padding:6px 14px;font-size:12px;z-index:5;display:none}
+.picking .pick-hint{display:block}.picking .page *{cursor:crosshair}
+.hbox,.sbox{position:absolute;pointer-events:none;border-radius:3px;display:none;z-index:4}
+.hbox{border:2px solid var(--acc);background:#6d28d91a}
+.sbox{border:2px solid var(--acc);background:#6d28d92e;box-shadow:0 0 0 4px #6d28d933}
+.tag{position:absolute;top:-22px;left:-2px;background:var(--acc);color:#fff;font:600 11px/18px ui-monospace,monospace;padding:0 6px;border-radius:3px;white-space:nowrap}
+.float{position:absolute;z-index:6;display:none;background:var(--ink);color:#fff;border-radius:10px;padding:4px;gap:2px;box-shadow:0 6px 20px #0004}
+.float button{background:none;border:0;color:#fff;padding:6px 10px;border-radius:7px;font-size:12px}
+.float button:hover{background:#ffffff22}.float .go{background:var(--acc)}
+/* mock site */
+.site{font-family:Georgia,serif;color:#1c1917}
+.site nav{display:flex;justify-content:space-between;align-items:center;padding:18px 48px;border-bottom:1px solid #eee;font-family:system-ui}
+.site nav a{margin-left:24px;color:#57534e;text-decoration:none;font-size:15px}
+.hero{padding:64px 48px 32px;text-align:center;background:linear-gradient(180deg,#fafaf9,#fff)}
+.hero h1{font-size:52px;line-height:1.08;margin:0 0 16px;letter-spacing:-.02em}
+.hero p{font:18px/1.6 system-ui;color:#57534e;max-width:520px;margin:0 auto 28px}
+.cta{font:600 16px system-ui;background:#1c1917;color:#fff;border:0;border-radius:8px;padding:14px 28px}
+.ghost{font:500 16px system-ui;background:transparent;color:#57534e;border:1px solid #d6d3d1;border-radius:8px;padding:14px 24px;margin-left:8px}
+.plans{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;padding:32px 48px 64px;font-family:system-ui}
+.plan{border:1px solid #e7e5e4;border-radius:16px;padding:28px}
+.plan.hot{border:2px solid #1c1917;box-shadow:0 12px 32px #0001}
+.plan h3{margin:0 0 4px;font-size:18px}.plan .price{font-size:40px;font-weight:700;margin:12px 0}
+.plan .price small{font-size:14px;font-weight:400;color:#78716c}
+.plan ul{padding:0;list-style:none;color:#57534e;font-size:14px;line-height:2.1;margin:0 0 20px}
+.plan button{width:100%;padding:11px;border-radius:8px;border:1px solid #d6d3d1;background:#fff;font-weight:600;font-size:14px}
+.plan.hot button{background:#1c1917;color:#fff;border:0}
+.badge-s{font-size:11px;background:#fde68a;color:#78350f;padding:2px 8px;border-radius:99px;font-weight:600}
+/* panel */
+.panel{width:400px;margin:12px;background:var(--bg);border-radius:12px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 2px 12px #0002}
+.phead{background:#fff;border-bottom:1px solid var(--line);padding:12px 16px 0}
+.brand{display:flex;justify-content:space-between;align-items:center;font-weight:700;margin-bottom:10px}
+.brand span{font-size:11px;font-weight:500;color:var(--mute)}
+.tabs{display:flex;gap:2px}.tabs button{background:none;border:0;padding:8px 12px;color:var(--mute);border-bottom:2px solid transparent;font-weight:500}
+.tabs button.on{color:var(--acc);border-color:var(--acc)}
+.tabs .n{background:var(--acc);color:#fff;border-radius:99px;font-size:10px;padding:0 6px;margin-left:4px}
+.pbody{flex:1;overflow:auto;padding:16px}
+.pfoot{background:#fff;border-top:1px solid var(--line);padding:10px 16px;display:flex;gap:8px}
+.btn{border:1px solid var(--line);background:#fff;border-radius:8px;padding:8px 14px;font-weight:500}
+.btn.p{background:var(--acc);border-color:var(--acc);color:#fff}.btn.full{width:100%}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px}
+.card h4{margin:0 0 8px;font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--mute);display:flex;justify-content:space-between;align-items:center}
+.lb{font-size:10px;font-weight:700;letter-spacing:.04em;padding:1px 7px;border-radius:99px;text-transform:uppercase}
+.lb.m{background:var(--meas-bg);color:var(--meas)}.lb.i{background:var(--inf-bg);color:var(--inf)}
+.kv{display:grid;grid-template-columns:110px 1fr;gap:3px 10px;font-size:13px}.kv dt{color:var(--mute)}.kv dd{margin:0;font-variant-numeric:tabular-nums;word-break:break-word}
+.swatch{display:inline-block;width:12px;height:12px;border-radius:3px;border:1px solid #0002;vertical-align:-2px;margin-right:5px}
+.pass{color:var(--ok);font-weight:600}.fail{color:var(--bad);font-weight:600}.cant{color:var(--inf);font-weight:600}
+.claim{padding:10px 0;border-top:1px solid var(--line)}.claim:first-of-type{border-top:0;padding-top:2px}
+.claim p{margin:4px 0 6px}.ev{display:flex;gap:4px;flex-wrap:wrap}
+.chip{font:11px ui-monospace,monospace;background:var(--meas-bg);color:var(--meas);border-radius:5px;padding:1px 6px}
+.chip.v{font-family:inherit;background:var(--acc-soft);color:var(--acc)}
+.muted{color:var(--mute);font-size:13px}.center{text-align:center;padding:36px 12px}
+.big{width:56px;height:56px;border-radius:16px;background:var(--acc-soft);color:var(--acc);display:grid;place-items:center;margin:0 auto 14px;font-size:26px}
+.steps{list-style:none;padding:0;margin:0}.steps li{padding:8px 0;display:flex;gap:10px;align-items:center;color:var(--mute)}
+.steps li.done{color:var(--ink)}.steps li.now{color:var(--acc);font-weight:600}
+.dot{width:18px;height:18px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;font-size:10px}
+.done .dot{background:var(--meas);border-color:var(--meas);color:#fff}.now .dot{border-color:var(--acc);border-top-color:transparent;animation:sp 1s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.crumbs{display:flex;gap:4px;align-items:center;flex-wrap:wrap;margin-bottom:10px;font:12px ui-monospace,monospace}
+.crumbs button{border:1px solid var(--line);background:#fff;border-radius:6px;padding:1px 8px}.crumbs button.on{background:var(--acc);color:#fff;border-color:var(--acc)}
+.disc{font-size:12px;color:var(--mute);background:#fff;border:1px dashed var(--line);border-radius:10px;padding:10px;margin-top:10px}
+.thumb{height:64px;border-radius:8px;border:1px solid var(--line);background:#fff;display:grid;place-items:center;overflow:hidden;margin-bottom:8px}
+.lib{display:grid;gap:10px}.item{display:flex;gap:10px;align-items:flex-start}.item input{margin-top:4px;accent-color:var(--acc)}
+.item .meta{flex:1;min-width:0}.item .t{font-weight:600}
+.tray{position:sticky;bottom:0;background:var(--ink);color:#fff;border-radius:12px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;margin-top:12px}
+table{width:100%;border-collapse:collapse;font-size:12px}th,td{text-align:left;padding:6px 6px;border-top:1px solid var(--line);vertical-align:top}
+th{font-size:11px;color:var(--mute);font-weight:600}td.diff{background:#fef9c3}
+.borrow{display:flex;gap:6px;flex-wrap:wrap}.borrow label{font-size:12px;border:1px solid var(--line);border-radius:99px;padding:2px 10px;background:#fff;cursor:pointer}
+.borrow input{display:none}.borrow input:checked+span{color:var(--acc);font-weight:700}
+pre{background:#16151a;color:#e5e3ee;border-radius:10px;padding:12px;font:12px/1.5 ui-monospace,monospace;overflow:auto;margin:0;white-space:pre-wrap}
+.seg{display:flex;background:#e9e7ef;border-radius:8px;padding:2px;margin-bottom:10px}.seg button{flex:1;border:0;background:none;border-radius:6px;padding:5px;font-size:12px}.seg button.on{background:#fff;font-weight:600}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:8px 16px;border-radius:99px;font-size:13px;opacity:0;transition:.2s;pointer-events:none}.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="flow" id="flow"><b>Prototype flow:</b></div>
+<div class="stage">
+  <div class="browser" id="browser">
+    <div class="bar"><div class="dots"><i></i><i></i><i></i></div><div class="url">northwind.example/pricing</div></div>
+    <div class="page" id="page">
+      <div class="pick-hint">Click any element · ↑ ↓ walk parent/child · Esc to cancel</div>
+      <div class="hbox" id="hbox"><span class="tag"></span></div>
+      <div class="sbox" id="sbox"><span class="tag"></span></div>
+      <div class="float" id="float"><button class="go" id="fAnalyze">✦ Analyze</button><button id="fUp">↑ Parent</button><button id="fDown">↓ Child</button></div>
+      <div class="site" id="site">
+        <nav><strong style="font-size:20px">Northwind</strong><div><a>Product</a><a>Pricing</a><a>Docs</a><a style="color:#1c1917;font-weight:600">Sign in</a></div></nav>
+        <section class="hero"><h1>Ship invoices that get paid on time</h1><p>Northwind automates billing, reminders and reconciliation so your team can focus on growth.</p><button class="cta">Start free trial</button><button class="ghost">Book a demo</button></section>
+        <section class="plans">
+          <div class="plan"><h3>Starter</h3><div class="price">$19<small>/mo</small></div><ul><li>5 invoices</li><li>Email support</li></ul><button>Choose Starter</button></div>
+          <div class="plan hot"><span class="badge-s">Most popular</span><h3 style="margin-top:8px">Growth</h3><div class="price">$49<small>/mo</small></div><ul><li>Unlimited invoices</li><li>Automated reminders</li></ul><button>Choose Growth</button></div>
+          <div class="plan"><h3>Scale</h3><div class="price">$129<small>/mo</small></div><ul><li>Team roles</li><li>Priority support</li></ul><button>Choose Scale</button></div>
+        </section>
+      </div>
+    </div>
+  </div>
+  <aside class="panel">
+    <div class="phead"><div class="brand"><div>◎ Pixel Peeper</div><span id="keystat">API key ✓ Anthropic</span></div>
+      <div class="tabs" id="tabs"><button data-t="inspect" class="on">Inspect</button><button data-t="library">Library <span class="n" id="libn">0</span></button><button data-t="compare">Compare</button></div></div>
+    <div class="pbody" id="pbody"></div>
+    <div class="pfoot" id="pfoot"></div>
+  </aside>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const $=s=>document.querySelector(s), page=$('#page'), site=$('#site');
+const S={tab:'inspect',phase:'idle',hover:null,sel:null,facts:null,analysis:null,lib:[],cmp:[],pickFor:{},xtab:'md',keyOk:true};
+
+/* ---------- Measure (real values from the mock DOM) ---------- */
+const px=v=>parseFloat(v)||0;
+const rgb=c=>{const m=c.match(/[\d.]+/g);return m?m.map(Number):null};
+const lum=([r,g,b])=>{const f=c=>{c/=255;return c<=.03928?c/12.92:((c+.055)/1.055)**2.4};return .2126*f(r)+.7152*f(g)+.0722*f(b)};
+function bgOf(el){for(let n=el;n&&n!==page;n=n.parentElement){const cs=getComputedStyle(n);
+  if(cs.backgroundImage!=='none')return{cant:'Background is a gradient or image'};
+  const c=rgb(cs.backgroundColor);if(c&&(c[3]===undefined||c[3]>0))return{c}}return{c:[255,255,255]}}
+function measure(el){
+  const cs=getComputedStyle(el),r=el.getBoundingClientRect(),fs=px(cs.fontSize),fw=+cs.fontWeight||400;
+  const pad=[cs.paddingTop,cs.paddingRight,cs.paddingBottom,cs.paddingLeft].map(px);
+  const fg=rgb(cs.color),bg=bgOf(el);let contrast;
+  if(bg.cant||!fg)contrast={can:false,why:bg.cant||'Unparsed color'};
+  else{const a=lum(fg),b=lum(bg.c),ratio=(Math.max(a,b)+.05)/(Math.min(a,b)+.05),large=fs>=24||(fs>=18.66&&fw>=700);
+    contrast={can:true,ratio:+ratio.toFixed(2),aa:ratio>=(large?3:4.5),aaa:ratio>=(large?4.5:7)}}
+  const nz=pad.filter(Boolean),base=nz.length?[8,4].find(b=>nz.every(v=>v%b===0))||null:null;
+  const same=[...site.querySelectorAll('*')].filter(n=>{const c=getComputedStyle(n);return c.fontSize===cs.fontSize&&c.color===cs.color&&c.backgroundColor===cs.backgroundColor&&c.borderRadius===cs.borderRadius&&c.paddingTop===cs.paddingTop}).length;
+  return{tag:el.tagName.toLowerCase(),name:label(el),
+    'typography.fontFamily':cs.fontFamily.split(',')[0].replace(/"/g,''),'typography.fontSize':fs,'typography.fontWeight':fw,
+    'typography.lineHeight':cs.lineHeight==='normal'?'normal':px(cs.lineHeight),'typography.letterSpacing':px(cs.letterSpacing),
+    'color.text':cs.color,'color.background':bg.c?`rgb(${bg.c.slice(0,3).join(', ')})`:cs.backgroundColor,'color.contrast':contrast,
+    'spacing.padding':pad,'spacing.scaleBase':base,'size.width':Math.round(r.width),'size.height':Math.round(r.height),
+    'shape.borderRadius':px(cs.borderTopLeftRadius),'shape.border':`${px(cs.borderTopWidth)}px ${cs.borderTopStyle}`,'shape.boxShadow':cs.boxShadow==='none'?'none':'yes',
+    'layout.display':cs.display,'structure.role':el.getAttribute('role')||({button:'button',nav:'navigation',h1:'heading',h3:'heading',a:'link'}[el.tagName.toLowerCase()]||null),
+    'a11y.tapTarget':Math.round(r.width)>=44&&Math.round(r.height)>=44,'consistency.sameStyleCount':same}}
+function label(el){const t=el.tagName.toLowerCase();const x=(el.textContent||'').trim().replace(/\s+/g,' ').slice(0,26);return `${t}${x&&el.children.length<2?` “${x}”`:''}`}
+
+/* ---------- Mock model output (canned; the real one is AI) ---------- */
+function analyze(f){
+  const t=f.tag,fs=f['typography.fontSize'],h=f['size.height'],ev=(...a)=>a;
+  const cta=t==='button'&&f['color.background']!=='rgb(255, 255, 255)';
+  const role=cta?'Primary call-to-action':t==='button'?'Secondary action':t==='h1'?'Page headline':t==='nav'?'Global navigation':f['shape.borderRadius']>=12?'Pricing card / content container':'Supporting content';
+  const claims=[];
+  if(f['color.contrast'].can)claims.push({l:'m',t:`Text/background contrast is ${f['color.contrast'].ratio}:1 — ${f['color.contrast'].aa?'passes':'fails'} WCAG AA.`,ev:ev('color.contrast')});
+  else claims.push({l:'m',t:`Contrast can't be measured: ${f['color.contrast'].why}. Check the screenshot manually.`,ev:ev('color.contrast')});
+  claims.push({l:'m',t:`Tap target is ${f['size.width']}×${h}px — ${f['a11y.tapTarget']?'meets':'below'} the 44px guideline.`,ev:ev('size.width','size.height','a11y.tapTarget')});
+  if(f['spacing.scaleBase'])claims.push({l:'m',t:`Padding follows a ${f['spacing.scaleBase']}px scale.`,ev:ev('spacing.padding','spacing.scaleBase')});
+  const why=[
+    {l:'i',t:cta?`Emphasis comes from inverted contrast and isolation: a dark fill on a light page makes it the heaviest object in its region, which draws the eye first.`:t==='h1'?`A ${fs}px headline dominates the type scale, so it is read before any body copy. This sets a clear entry point.`:`Restrained styling keeps this element subordinate to the primary content, which protects the hierarchy around it.`,ev:ev('typography.fontSize','color.background','size.height')},
+    {l:'i',t:`Fitts's law reading: ${h>=44?'a comfortable target size':'a small target'} at ${h}px height ${h>=44?'lowers':'raises'} the effort to hit it.`,ev:ev('size.height','a11y.tapTarget')}];
+  const trade=[{l:'i',t:f['shape.borderRadius']>=12?'Leans friendly and soft over sharp and technical; generous radius signals approachability.':'Leans toward density and clarity over decoration.',ev:ev('shape.borderRadius','shape.border')}];
+  return{role,roleClaim:{l:'i',t:`Likely role: ${role.toLowerCase()}, inferred from position, weight and markup.`,ev:ev('structure.role','color.background')},claims,why,trade,chips:[cta?'contrast emphasis':'low emphasis',f['shape.borderRadius']>=8?'rounded corners':'tight corners',f['typography.fontWeight']>=600?'bold weight':'regular weight',t]};
+}
+
+/* ---------- Page picking ---------- */
+const boxes=(box,el)=>{if(!el){box.style.display='none';return}
+  const p=page.getBoundingClientRect(),r=el.getBoundingClientRect();
+  Object.assign(box.style,{display:'block',left:r.left-p.left+page.scrollLeft+'px',top:r.top-p.top+page.scrollTop+'px',width:r.width+'px',height:r.height+'px'});
+  box.querySelector('.tag').textContent=`${el.tagName.toLowerCase()} · ${Math.round(r.width)}×${Math.round(r.height)}`};
+const floatBar=()=>{const f=$('#float');if(!S.sel||S.phase==='analyzing'){f.style.display='none';return}
+  const p=page.getBoundingClientRect(),r=S.sel.getBoundingClientRect();
+  f.style.display='flex';f.style.left=Math.max(8,r.left-p.left+page.scrollLeft)+'px';f.style.top=r.bottom-p.top+page.scrollTop+10+'px'};
+page.addEventListener('mousemove',e=>{if(S.phase!=='picking')return;const el=document.elementFromPoint(e.clientX,e.clientY);
+  if(el&&site.contains(el)&&el!==site){S.hover=el;boxes($('#hbox'),el)}});
+page.addEventListener('click',e=>{if(S.phase!=='picking'||!S.hover)return;e.preventDefault();e.stopPropagation();choose(S.hover)},true);
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&S.phase==='picking')setPhase(S.sel?'selected':'idle');
+  if(S.sel&&(e.key==='ArrowUp'||e.key==='ArrowDown')){const n=e.key==='ArrowUp'?S.sel.parentElement:S.sel.firstElementChild;if(n&&site.contains(n)&&n!==site){e.preventDefault();choose(n)}}});
+page.addEventListener('scroll',()=>{boxes($('#sbox'),S.sel);floatBar()});
+function choose(el){S.sel=el;S.facts=measure(el);S.analysis=null;boxes($('#hbox'),null);boxes($('#sbox'),el);setPhase('selected')}
+function setPhase(p){S.phase=p;$('#browser').classList.toggle('picking',p==='picking');if(p==='idle'){S.sel=null;boxes($('#sbox'),null);boxes($('#hbox'),null)}
+  if(p==='picking')boxes($('#hbox'),null);render();floatBar()}
+$('#fAnalyze').onclick=runAnalysis;
+$('#fUp').onclick=()=>{const n=S.sel.parentElement;if(n&&n!==site&&site.contains(n))choose(n)};
+$('#fDown').onclick=()=>{const n=S.sel.firstElementChild;if(n)choose(n)};
+
+/* ---------- Flow ---------- */
+const STEPS=['Measuring styles','Capturing screenshot','Checking rules (WCAG, Fitts…)','Asking model (Inferred layer)'];
+async function runAnalysis(){if(!S.keyOk){toast('Add an API key first');return}
+  setPhase('analyzing');S.step=0;render();
+  for(let i=0;i<STEPS.length;i++){S.step=i;render();await new Promise(r=>setTimeout(r,i===3?1100:550))}
+  S.analysis=analyze(S.facts);S.step=4;setPhase('result')}
+const claim=(c)=>`<div class="claim"><span class="lb ${c.l}">${c.l==='m'?'Measured':'Inferred'}</span><p>${c.t}</p><div class="ev">${c.ev.map(e=>`<span class="chip">${e}</span>`).join('')}</div></div>`;
+const val=v=>typeof v==='object'&&!Array.isArray(v)&&v?'':Array.isArray(v)?v.join(' '):v===null?'—':v;
+const sw=c=>`<span class="swatch" style="background:${c}"></span>${c}`;
+function measured(f){const c=f['color.contrast'];
+  const sec=(t,rows)=>`<div class="card"><h4>${t}<span class="lb m">Measured</span></h4><dl class="kv">${rows.map(([k,v])=>`<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl></div>`;
+  return sec('Typography',[['Family',f['typography.fontFamily']],['Size / weight',`${f['typography.fontSize']}px / ${f['typography.fontWeight']}`],['Line height',f['typography.lineHeight']],['Letter spacing',f['typography.letterSpacing']+'px']])+
+  sec('Color',[['Text',sw(f['color.text'])],['Background',sw(f['color.background'])],['Contrast',c.can?`${c.ratio}:1 · AA <span class="${c.aa?'pass':'fail'}">${c.aa?'pass':'fail'}</span> · AAA <span class="${c.aaa?'pass':'fail'}">${c.aaa?'pass':'fail'}</span>`:`<span class="cant">Can't measure</span> — ${c.why}`]])+
+  sec('Spacing & size',[['Padding',f['spacing.padding'].join(' ')],['Scale',f['spacing.scaleBase']?`multiples of ${f['spacing.scaleBase']}`:'off-grid'],['W × H',`${f['size.width']} × ${f['size.height']}`]])+
+  sec('Shape & structure',[['Radius',f['shape.borderRadius']+'px'],['Border',f['shape.border']],['Shadow',f['shape.boxShadow']],['Tag / role',`${f.tag} / ${f['structure.role']||'—'}`],['Same style on page',f['consistency.sameStyleCount']+'×']])}
+function render(){
+  $('#libn').textContent=S.lib.length;
+  document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===S.tab));
+  document.querySelectorAll('#flow button').forEach(b=>b.classList.toggle('on',b.dataset.k===flowKey()));
+  const b=$('#pbody'),ft=$('#pfoot');ft.innerHTML='';
+  if(S.tab==='library')return renderLib(b,ft);
+  if(S.tab==='compare')return renderCmp(b,ft);
+  const P=S.phase;
+  if(P==='idle'){b.innerHTML=`<div class="center"><div class="big">⌖</div><h3 style="margin:0 0 6px">Inspect design language</h3><p class="muted">Pick any element on the page to see what it does, why it works, and what's measurable.</p></div>
+    <div class="card"><h4>How labels work</h4><p style="margin:0 0 6px"><span class="lb m">Measured</span> read directly from the page. Same answer every time.</p><p style="margin:0"><span class="lb i">Inferred</span> AI interpretation, always tied to a measured value.</p></div>`;
+    ft.innerHTML=`<button class="btn p full" id="pick">Pick an element</button>`;$('#pick').onclick=()=>setPhase('picking')}
+  if(P==='picking'){b.innerHTML=`<div class="center"><div class="big">☝︎</div><h3 style="margin:0 0 6px">Hover and click an element</h3><p class="muted">The highlight shows what you'll select. Use ↑ ↓ to move to a parent or child.</p></div>`;
+    ft.innerHTML=`<button class="btn full" id="cancel">Cancel (Esc)</button>`;$('#cancel').onclick=()=>setPhase(S.sel?'selected':'idle')}
+  if(P==='selected'){const f=S.facts,path=[];for(let n=S.sel;n&&n!==site&&path.length<4;n=n.parentElement)path.unshift(n);
+    b.innerHTML=`<div class="crumbs">${path.map((n,i)=>`<button data-i="${i}" class="${n===S.sel?'on':''}">${n.tagName.toLowerCase()}</button>`).join('<span class="muted">›</span>')}</div>
+      <div class="card"><b>${f.name}</b><div class="muted">${f['size.width']}×${f['size.height']} · ${f['typography.fontSize']}px ${f['typography.fontFamily']}</div></div>${measured(f)}
+      <div class="disc"><b>What gets sent to the model:</b> a screenshot of this element, the measured values above and our rules library. Nothing else from the page.</div>`;
+    b.querySelectorAll('.crumbs button').forEach(x=>x.onclick=()=>choose(path[+x.dataset.i]));
+    ft.innerHTML=`<button class="btn" id="repick">Re-pick</button><button class="btn p" style="flex:1" id="an">✦ Analyze this element</button>`;$('#repick').onclick=()=>setPhase('picking');$('#an').onclick=runAnalysis}
+  if(P==='analyzing'){b.innerHTML=`<div class="card"><h4>Analyzing ${S.facts.name}</h4><ul class="steps">${STEPS.map((s,i)=>`<li class="${i<S.step?'done':i===S.step?'now':''}"><span class="dot">${i<S.step?'✓':''}</span>${s}</li>`).join('')}</ul></div><p class="muted">Steps 1–3 are deterministic and instant. Only step 4 uses AI.</p>`}
+  if(P==='result'){const a=S.analysis,f=S.facts;b.innerHTML=`
+    <div class="card"><h4>${f.name}<span class="lb i">Inferred</span></h4><div style="font-size:17px;font-weight:700;margin-bottom:6px">${a.role}</div>${claim(a.roleClaim).replace('<div class="claim">','<div>')}<div class="ev" style="margin-top:8px">${a.chips.map(c=>`<span class="chip v">${c}</span>`).join('')}</div></div>
+    <div class="card"><h4>Rules checked<span class="lb m">Measured</span></h4>${a.claims.map(claim).join('')}</div>
+    <div class="card"><h4>Why it works / where it falls short<span class="lb i">Inferred</span></h4>${a.why.map(claim).join('')}</div>
+    <div class="card"><h4>Trade-off<span class="lb i">Inferred</span></h4>${a.trade.map(claim).join('')}</div>
+    <details><summary class="muted" style="cursor:pointer;margin-bottom:8px">All measured values</summary>${measured(f)}</details>`;
+    ft.innerHTML=`<button class="btn" id="again">Pick another</button><button class="btn" id="dl">Export</button><button class="btn p" style="flex:1" id="save">Save to library</button>`;
+    $('#again').onclick=()=>setPhase('picking');$('#dl').onclick=()=>{S.xtab='md';S.exportOne=true;S.tab='compare';S.cmp=[saveItem(true)];render()};
+    $('#save').onclick=()=>{saveItem();toast('Saved to library')}}
+}
+function flowKey(){if(S.tab!=='inspect')return S.tab;return S.phase}
+function saveItem(silent){const ex=S.lib.find(i=>i.el===S.sel);if(ex&&!silent)return ex;if(ex)return ex;
+  const it={id:Date.now()+Math.random(),el:S.sel,f:S.facts,a:S.analysis,site:'northwind.example'};S.lib.push(it);render();return it}
+
+function renderLib(b,ft){if(!S.lib.length){b.innerHTML=`<div class="center"><div class="big">▤</div><h3 style="margin:0 0 6px">Nothing saved yet</h3><p class="muted">Analyze an element and save it. Compare 2–3 saved items to decide what to borrow.</p></div>`;ft.innerHTML=`<button class="btn full" id="seed">Add 3 sample items (prototype)</button>`;$('#seed').onclick=seed;return}
+  b.innerHTML=`<div class="lib">${S.lib.map(i=>`<div class="card item"><input type="checkbox" data-id="${i.id}" ${S.cmp.includes(i)?'checked':''}><div class="meta"><div class="thumb"><span style="${swatchStyle(i.f)}">Aa</span></div><div class="t">${i.a.role}</div><div class="muted">${i.f.name} · ${i.site}</div><div class="ev" style="margin-top:6px">${i.a.chips.slice(0,3).map(c=>`<span class="chip v">${c}</span>`).join('')}</div></div></div>`).join('')}</div>
+   ${S.cmp.length?`<div class="tray"><span>${S.cmp.length} selected (max 3)</span><button class="btn p" id="cmp" ${S.cmp.length<2?'disabled':''}>Compare →</button></div>`:''}`;
+  b.querySelectorAll('input').forEach(x=>x.onchange=()=>{const it=S.lib.find(i=>String(i.id)===x.dataset.id);
+    if(x.checked){if(S.cmp.length>=3){x.checked=false;toast('Compare up to 3');return}S.cmp.push(it)}else S.cmp=S.cmp.filter(i=>i!==it);render()});
+  const c=$('#cmp');if(c)c.onclick=()=>{S.tab='compare';S.exportOne=false;render()};
+  ft.innerHTML=`<button class="btn full" id="seed">Add sample items (prototype)</button>`;$('#seed').onclick=seed}
+function swatchStyle(f){return`font:${f['typography.fontWeight']} 20px ${f['typography.fontFamily']};color:${f['color.text']};background:${f['color.background']};padding:6px 18px;border-radius:${f['shape.borderRadius']}px`}
+function seed(){const picks=['.cta','.plan.hot','.hero h1'];picks.forEach(s=>{const el=site.querySelector(s);if(S.lib.some(i=>i.el===el))return;const f=measure(el);S.lib.push({id:Date.now()+Math.random(),el,f,a:analyze(f),site:'northwind.example'})});render();toast('Sample items added')}
+
+const GROUPS=[['Typography',['typography.fontFamily','typography.fontSize','typography.fontWeight']],['Color',['color.text','color.background']],['Shape',['shape.borderRadius','shape.border']],['Spacing',['spacing.padding']]];
+function renderCmp(b,ft){const items=S.cmp;
+  if(items.length<1){b.innerHTML=`<div class="center"><div class="big">⇄</div><h3 style="margin:0 0 6px">Compare 2–3 items</h3><p class="muted">Select items in your library, then decide what to borrow from each.</p></div>`;ft.innerHTML=`<button class="btn p full" id="gl">Go to library</button>`;$('#gl').onclick=()=>{S.tab='library';render()};return}
+  const single=items.length===1;
+  items.forEach((_,i)=>{});GROUPS.forEach(([g])=>{if(S.pickFor[g]===undefined||!items[S.pickFor[g]])S.pickFor[g]=0});
+  const rows=GROUPS.flatMap(([g,keys])=>keys.map(k=>{const vals=items.map(i=>val(i.f[k]));const diff=new Set(vals).size>1;return`<tr><th>${k.split('.')[1]}</th>${vals.map(v=>`<td class="${diff?'diff':''}">${v}</td>`).join('')}</tr>`}));
+  b.innerHTML=`${single?'':`<div class="card"><h4>Side by side<span class="lb m">Measured</span></h4><table><tr><th></th>${items.map((i,n)=>`<th>${'ABC'[n]} · ${i.a.role}</th>`).join('')}</tr>${rows.join('')}</table><p class="muted" style="margin:8px 0 0">Highlighted cells differ.</p></div>
+    <div class="card"><h4>Read-across<span class="lb i">Inferred</span></h4><p style="margin:0">${items[0].a.role} vs ${items[1].a.role}: the first spends its emphasis on contrast and size; the second relies on containment and spacing. Borrow emphasis from A for actions and containment from B for grouping.</p></div>
+    <div class="card"><h4>What to borrow</h4>${GROUPS.map(([g])=>`<div style="margin-bottom:8px"><div class="muted">${g}</div><div class="borrow">${items.map((_,n)=>`<label><input type="radio" name="g-${g}" value="${n}" ${S.pickFor[g]===n?'checked':''}><span>${'ABC'[n]}</span></label>`).join('')}</div></div>`).join('')}</div>`}
+    <div class="card"><h4>Your design direction</h4><div class="seg" id="seg">${[['md','DESIGN.md'],['json','tokens.json'],['css','CSS vars']].map(([k,t])=>`<button data-k="${k}" class="${S.xtab===k?'on':''}">${t}</button>`).join('')}</div><pre id="xout">${esc(exportText(items))}</pre></div>`;
+  b.querySelectorAll('input[type=radio]').forEach(x=>x.onchange=()=>{S.pickFor[x.name.slice(2)]=+x.value;render()});
+  b.querySelectorAll('#seg button').forEach(x=>x.onclick=()=>{S.xtab=x.dataset.k;render()});
+  ft.innerHTML=`<button class="btn" id="back">← Library</button><button class="btn p" style="flex:1" id="copy">Copy ${({md:'DESIGN.md',json:'tokens.json',css:'CSS'})[S.xtab]}</button>`;
+  $('#back').onclick=()=>{S.tab='library';render()};$('#copy').onclick=()=>{navigator.clipboard?.writeText(exportText(items));toast('Copied')}}
+const esc=s=>s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+function pickVal(items,g,k){return items[S.pickFor[g]||0].f[k]}
+function tokens(items){const t={};GROUPS.forEach(([g,keys])=>keys.forEach(k=>{t[k]=pickVal(items,g,k)}));return t}
+function exportText(items){const t=tokens(items),src=g=>'ABC'[S.pickFor[g]||0];
+  if(S.xtab==='json')return JSON.stringify({font:{family:{$value:t['typography.fontFamily'],$extensions:{label:'measured',from:src('Typography')}},size:{$value:t['typography.fontSize']+'px',$extensions:{label:'measured'}},weight:{$value:t['typography.fontWeight'],$extensions:{label:'measured'}}},color:{text:{$value:t['color.text'],$extensions:{label:'measured',from:src('Color')}},background:{$value:t['color.background'],$extensions:{label:'measured'}}},radius:{$value:t['shape.borderRadius']+'px',$extensions:{label:'measured'}},direction:{emphasis:{$value:items[0].a.chips[0],$extensions:{label:'inferred'}}}},null,2);
+  if(S.xtab==='css')return`:root{\n  --font-family: ${t['typography.fontFamily']}; /* Measured */\n  --font-size: ${t['typography.fontSize']}px; /* Measured */\n  --color-text: ${t['color.text']}; /* Measured */\n  --color-bg: ${t['color.background']}; /* Measured */\n  --radius: ${t['shape.borderRadius']}px; /* Measured */\n  --space: ${t['spacing.padding'][0]}px ${t['spacing.padding'][1]}px; /* Measured */\n}`;
+  return`# Design direction\n\n## Typography — from ${src('Typography')} [Measured]\n- Family: ${t['typography.fontFamily']}\n- Size / weight: ${t['typography.fontSize']}px / ${t['typography.fontWeight']}\n\n## Color — from ${src('Color')} [Measured]\n- Text ${t['color.text']} on ${t['color.background']}\n\n## Shape — from ${src('Shape')} [Measured]\n- Radius ${t['shape.borderRadius']}px, border ${t['shape.border']}\n\n## Intent — [Inferred]\n- ${items.map(i=>i.a.role).join('; ')}\n- Emphasis technique: ${items[0].a.chips[0]}`}
+
+/* ---------- Chrome ---------- */
+document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>{S.tab=b.dataset.t;render()});
+const FLOW=[['idle','1 Idle'],['picking','2 Pick'],['selected','3 Selected'],['analyzing','4 Analyzing'],['result','5 Result'],['library','6 Library'],['compare','7 Compare + export']];
+FLOW.forEach(([k,t])=>{const b=document.createElement('button');b.dataset.k=k;b.textContent=t;$('#flow').append(b);
+  b.onclick=async()=>{S.tab='inspect';
+    if(k==='library'){S.tab='library';if(!S.lib.length)seed();return render()}
+    if(k==='compare'){if(!S.lib.length)seed();S.cmp=S.lib.slice(0,2);S.tab='compare';return render()}
+    if(k==='idle')return setPhase('idle');if(k==='picking')return setPhase('picking');
+    if(!S.sel)choose(site.querySelector('.cta'));
+    if(k==='selected')return setPhase('selected');if(k==='analyzing'){runAnalysis();return}
+    if(k==='result'){S.analysis=analyze(S.facts);return setPhase('result')}}});
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1400)}
+render();
+</script>
+</body>
+</html>
