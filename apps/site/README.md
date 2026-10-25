@@ -6,5 +6,5 @@ Preview: `python3 -m http.server 8790 --directory apps/site`, then open http://l
 
 - Fonts and detective poses in `assets/` are copies of `apps/extension/public/`; `icons.js` is generated from
   `apps/extension/components/icons.ts`. Re-copy them if those change.
-- Set `STORE_URL` in `site.js` once the Chrome Web Store listing exists; until then "Add to Chrome" scrolls to the install step.
+- Set `STORE_URL` in `site.js` once the Chrome Web Store listing exists; until then the buttons read "Coming soon", and setting it turns them into "Add to Chrome" links.
 - The hero's Measured chips are computed from the mock card at runtime; the headline and Inferred lines are fixed copy.

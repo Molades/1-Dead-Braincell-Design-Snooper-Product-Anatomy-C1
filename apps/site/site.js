@@ -2,7 +2,7 @@
 // The demo's Measured chips are read from the mock card with getComputedStyle, like the extension does;
 // only the headline and the Inferred line are written ahead of time.
 
-// Set this to the Chrome Web Store listing once it is published; until then the buttons go to the guide.
+// Set this to the Chrome Web Store listing once it is published; until then the buttons read "Coming soon".
 const STORE_URL = '';
 
 document.documentElement.classList.add('js');
@@ -15,7 +15,13 @@ for (const el of document.querySelectorAll('i[data-icon]')) {
   el.outerHTML = `<svg class="ph${el.className ? ` ${el.className}` : ''}" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true" focusable="false">${d}</svg>`;
 }
 
-if (STORE_URL) for (const a of document.querySelectorAll('[data-store]')) { a.href = STORE_URL; a.target = '_blank'; a.rel = 'noopener'; }
+if (STORE_URL) for (const el of document.querySelectorAll('[data-store]')) {
+  const a = document.createElement('a');
+  a.className = el.className.replace('soon', 'primary');
+  a.href = STORE_URL; a.target = '_blank'; a.rel = 'noopener';
+  a.innerHTML = `Add to Chrome${el.classList.contains('small') ? '' : ` <svg class="ph" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true">${window.PP_ICONS['arrow-right']}</svg>`}`;
+  el.replaceWith(a);
+}
 
 // ---- Header shadow once the page scrolls -------------------------------------------------------------
 const header = document.querySelector('.top');

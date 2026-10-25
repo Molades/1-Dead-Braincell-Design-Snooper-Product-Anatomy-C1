@@ -72,6 +72,8 @@ code { font: 500 .88em var(--mono); padding: 1px 5px; border-radius: 5px; backgr
 .btn .ph { font-size: 16px; transition: transform .22s var(--ease-out); }
 .primary { color: #fff; background: var(--g-primary); box-shadow: inset 0 0 0 1px #4a55bd, var(--hi-strong), var(--glow-primary); }
 .secondary { color: var(--ink); background: var(--g-control); box-shadow: inset 0 0 0 1px var(--line), var(--hi), var(--lift-1); }
+.soon { color: var(--accent-ink); cursor: default; background: var(--g-indigo); box-shadow: inset 0 0 0 1px var(--accent-line), var(--hi); }
+.soon:active { transform: none; }
 .btn.small { min-height: 36px; padding: 0 14px; border-radius: 10px; font-size: 14px; }
 @media (hover: hover) and (pointer: fine) {
   .primary:hover { background: var(--g-primary-hover); }
